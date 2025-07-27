@@ -30,28 +30,34 @@ type SignupForm = z.infer<typeof signupSchema>;
 
 const plans = [
   {
-    id: 'basic',
-    name: 'Basic Package',
+    id: 'free',
+    name: 'Free Plan',
     emoji: '🌱',
-    price: '₹1,999',
-    features: ['Soil Moisture Sensor', 'Temperature Sensor', 'Installation Support'],
-    description: 'Perfect for beginners starting their smart farming journey'
-  },
-  {
-    id: 'smart',
-    name: 'Smart AI Package',
-    emoji: '🌿',
-    price: '₹4,400',
-    features: ['All Basic Sensors', 'AI Camera Unit', 'Voice Assistant & Dashboard'],
-    description: 'Advanced AI features for intelligent crop monitoring'
+    price: 'Free',
+    features: [
+      'Voice Assistant & Dashboard',
+      'Weather Updates',
+      'Government Schemes Access',
+      'Market Trends Data'
+    ],
+    description: 'Access essential features for smart farming, excluding advanced crop monitoring and sensors.'
   },
   {
     id: 'premium',
-    name: 'Premium Agriculture Kit',
+    name: 'Premium Plan',
     emoji: '🌾',
     price: '₹10,000',
-    features: ['NPK Sensor + Camera', 'Weather + Voice Assistant', 'Dedicated Support'],
-    description: 'Complete solution for professional farmers'
+    features: [
+      'All Free Plan Features',
+      'Soil Moisture Sensor',
+      'Temperature Sensor',
+      'Installation Support',
+      'AI Camera Unit',
+      'NPK Sensor',
+      'Advanced Crop Monitoring',
+      'Dedicated Support'
+    ],
+    description: 'Unlock all features for comprehensive and professional farm management, including all sensors.'
   }
 ];
 
@@ -310,7 +316,7 @@ const Signup = () => {
                       <FormItem>
                         <FormLabel className="text-lg">{translateSync("Choose Your Plan")}</FormLabel>
                         <FormControl>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {plans.map((plan) => (
                               <Card 
                                 key={plan.id}
