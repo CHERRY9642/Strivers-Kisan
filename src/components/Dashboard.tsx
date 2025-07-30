@@ -50,7 +50,17 @@ export const Dashboard: React.FC = () => {
         'Digital Farming Assistant',
         'Monitor your crops',
         'Get AI insights',
-        'Maximize your harvest'
+        'Maximize your harvest',
+        'Temperature',
+        'Light Intensity',
+        'Humidity',
+        'Condition',
+        'Wind Speed',
+        'Pressure',
+        'Cloud Cover',
+        'Visibility',
+        "Today's Weather",
+        'Loading weather data...'
       ];
 
       const translated: Record<string, string> = {};
@@ -219,7 +229,7 @@ export const Dashboard: React.FC = () => {
             >
               <Sun className="h-8 w-8 text-primary" />
             </motion.div>
-            <p className="mt-2 text-muted-foreground">Loading weather data...</p>
+            <p className="mt-2 text-muted-foreground">{t('Loading weather data...')}</p>
           </div>
         )}
 
@@ -230,7 +240,7 @@ export const Dashboard: React.FC = () => {
             className="text-center py-8"
           >
             <AlertTriangle className="h-8 w-8 text-orange-500 mx-auto mb-2" />
-            <p className="text-muted-foreground">{error}</p>
+            <p className="text-muted-foreground">{t(error)}</p>
           </motion.div>
         )}
 
@@ -244,7 +254,7 @@ export const Dashboard: React.FC = () => {
             >
               <Card className="bg-gradient-to-br from-primary/5 to-accent/10 border-primary/20">
                 <CardHeader>
-                  <CardTitle className="text-lg font-indian text-primary">Today's Weather</CardTitle>
+                  <CardTitle className="text-lg font-indian text-primary">{t("Today's Weather")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -276,7 +286,7 @@ export const Dashboard: React.FC = () => {
                       >
                         {weatherData.current.temp}°C
                       </motion.div>
-                      <p className="text-sm text-muted-foreground">Temperature</p>
+                       <p className="text-sm text-muted-foreground">{t('Temperature')}</p>
                     </motion.div>
 
                     {/* Light Intensity */}
@@ -301,7 +311,7 @@ export const Dashboard: React.FC = () => {
                       <div className="text-2xl font-bold text-primary">
                         {weatherData.current.lightIntensity} lux
                       </div>
-                      <p className="text-sm text-muted-foreground">Light Intensity</p>
+                      <p className="text-sm text-muted-foreground">{t('Light Intensity')}</p>
                     </motion.div>
 
                     {/* Humidity */}
@@ -326,7 +336,7 @@ export const Dashboard: React.FC = () => {
                       <div className="text-2xl font-bold text-primary">
                         {weatherData.current.humidity}%
                       </div>
-                      <p className="text-sm text-muted-foreground">Humidity</p>
+                      <p className="text-sm text-muted-foreground">{t('Humidity')}</p>
                     </motion.div>
 
                     {/* Weather Condition */}
@@ -354,9 +364,9 @@ export const Dashboard: React.FC = () => {
                         {weatherData.current.condition === 'snowy' && <CloudSnow className="h-8 w-8 mx-auto mb-2 text-blue-300" />}
                       </motion.div>
                       <div className="text-lg font-medium text-primary capitalize">
-                        {weatherData.current.description}
+                        {t(weatherData.current.description)}
                       </div>
-                      <p className="text-sm text-muted-foreground">Condition</p>
+                      <p className="text-sm text-muted-foreground">{t('Condition')}</p>
                     </motion.div>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
@@ -382,7 +392,7 @@ export const Dashboard: React.FC = () => {
                       <div className="text-2xl font-bold text-primary">
                         {weatherData.current.windSpeed} km/h
                       </div>
-                      <p className="text-sm text-muted-foreground">Wind Speed</p>
+                      <p className="text-sm text-muted-foreground">{t('Wind Speed')}</p>
                     </motion.div>
 
                     {/* Pressure */}
@@ -407,7 +417,7 @@ export const Dashboard: React.FC = () => {
                       <div className="text-2xl font-bold text-primary">
                         {weatherData.current.pressure} hPa
                       </div>
-                      <p className="text-sm text-muted-foreground">Pressure</p>
+                      <p className="text-sm text-muted-foreground">{t('Pressure')}</p>
                     </motion.div>
 
                     {/* Cloud Cover */}
@@ -432,7 +442,7 @@ export const Dashboard: React.FC = () => {
                       <div className="text-2xl font-bold text-primary">
                         {weatherData.current.cloudCover}%
                       </div>
-                      <p className="text-sm text-muted-foreground">Cloud Cover</p>
+                      <p className="text-sm text-muted-foreground">{t('Cloud Cover')}</p>
                     </motion.div>
 
                     {/* Visibility */}
@@ -457,7 +467,7 @@ export const Dashboard: React.FC = () => {
                       <div className="text-2xl font-bold text-primary">
                         {weatherData.current.visibility} km
                       </div>
-                      <p className="text-sm text-muted-foreground">Visibility</p>
+                      <p className="text-sm text-muted-foreground">{t('Visibility')}</p>
                     </motion.div>
                   </div>
                 </CardContent>

@@ -3,8 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export const VoiceAssistant: React.FC = () => {
+  const { translateSync } = useLanguage();
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [lastCommand, setLastCommand] = useState<string>('');
@@ -93,10 +95,10 @@ export const VoiceAssistant: React.FC = () => {
                       <Mic className="h-8 w-8 text-accent" />
                     </motion.div>
                     <p className="text-sm font-medium text-primary">
-                      Listening...
+                      {translateSync('Listening...')}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Speak in Kannada, Hindi, or English
+                      {translateSync('Speak in Kannada, Hindi, or English')}
                     </p>
                     
                     {/* Voice level animation */}
@@ -129,10 +131,10 @@ export const VoiceAssistant: React.FC = () => {
                       <Volume2 className="h-8 w-8 text-primary" />
                     </motion.div>
                     <p className="text-sm font-medium text-primary">
-                      Speaking...
+                      {translateSync('Speaking...')}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Playing response in your language
+                      {translateSync('Playing response in your language')}
                     </p>
                   </div>
                 )}
@@ -141,7 +143,7 @@ export const VoiceAssistant: React.FC = () => {
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-sm font-medium text-primary">
-                        Last Command
+                        {translateSync('Last Command')}
                       </p>
                       <Button
                         variant="ghost"
@@ -156,7 +158,7 @@ export const VoiceAssistant: React.FC = () => {
                       "{lastCommand}"
                     </p>
                     <p className="text-xs text-muted-foreground mt-2">
-                      Tap the mic to ask another question
+                      {translateSync('Tap the mic to ask another question')}
                     </p>
                   </div>
                 )}
@@ -177,16 +179,16 @@ export const VoiceAssistant: React.FC = () => {
           >
             <Card className="w-64 shadow-card bg-card/95 backdrop-blur-md">
               <CardContent className="p-3">
-                <h4 className="text-sm font-medium mb-2">Quick Commands</h4>
+                <h4 className="text-sm font-medium mb-2">{translateSync('Quick Commands')}</h4>
                 <div className="space-y-1 text-xs">
                   <div className="p-2 bg-accent/10 rounded text-muted-foreground">
-                    "ಬೆಳೆ ಸ್ಥಿತಿ ತೋರಿಸಿ" - Show crop status
+                    "{translateSync('Show crop status')}"
                   </div>
                   <div className="p-2 bg-accent/10 rounded text-muted-foreground">
-                    "ಬೆಲೆ ಮಾಹಿತಿ" - Price information
+                    "{translateSync('Price information')}"
                   </div>
                   <div className="p-2 bg-accent/10 rounded text-muted-foreground">
-                    "ಸರ್ಕಾರಿ ಯೋಜನೆಗಳು" - Government schemes
+                    "{translateSync('Government schemes')}"
                   </div>
                 </div>
               </CardContent>

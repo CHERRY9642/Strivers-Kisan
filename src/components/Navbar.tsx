@@ -95,7 +95,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuToggle, isSidebarOpen }) =
                 Project Kisan
               </h1>
               <p className="text-xs text-muted-foreground hidden sm:block">
-                Digital Farming Assistant
+                {translateSync('Digital Farming Assistant')}
               </p>
             </div>
           </motion.div>
@@ -189,13 +189,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuToggle, isSidebarOpen }) =
                 <h3 className="font-semibold mb-3">{t('Notifications')}</h3>
                 <div className="space-y-2">
                   <div className="p-2 bg-accent/10 rounded text-sm">
-                    🌾 Crop monitoring alert: Low soil moisture detected
+                    🌾 {translateSync('Crop monitoring alert: Low soil moisture detected')}
                   </div>
                   <div className="p-2 bg-primary/10 rounded text-sm">
-                    📈 Tomato prices increased by 12% today
+                    📈 {translateSync('Tomato prices increased by 12% today')}
                   </div>
                   <div className="p-2 bg-secondary/10 rounded text-sm">
-                    🏛️ New subsidy scheme available for drip irrigation
+                    🏛️ {translateSync('New subsidy scheme available for drip irrigation')}
                   </div>
                 </div>
               </motion.div>
@@ -240,8 +240,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuToggle, isSidebarOpen }) =
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <h4 className="font-semibold">Farmers Friend</h4>
-                    <p className="text-sm text-muted-foreground">Karnataka, India</p>
+                    <h4 className="font-semibold">{translateSync('Farmers Friend')}</h4>
+                    <p className="text-sm text-muted-foreground">{translateSync('Karnataka, India')}</p>
                   </div>
                 </div>
                 <div className="space-y-2">

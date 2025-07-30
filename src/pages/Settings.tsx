@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 
 const Settings = () => {
+  const { translateSync } = useLanguage();
   const [settings, setSettings] = useState({
     language: 'kannada',
     notifications: {
@@ -91,10 +92,10 @@ const Settings = () => {
             {/* Header */}
             <motion.div variants={itemVariants} className="text-center space-y-4">
               <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary/80 bg-clip-text text-transparent font-indian">
-                Settings
+                {translateSync('Settings')}
               </h1>
               <p className="text-muted-foreground text-lg">
-                Customize your Project Kisan experience
+                {translateSync('Customize your Project Kisan experience')}
               </p>
             </motion.div>
 
@@ -104,10 +105,10 @@ const Settings = () => {
                 <CardHeader className="space-y-1">
                   <div className="flex items-center space-x-3">
                     <User className="h-6 w-6 text-primary" />
-                    <CardTitle className="text-xl font-indian">Profile Information</CardTitle>
+                    <CardTitle className="text-xl font-indian">{translateSync('Profile Information')}</CardTitle>
                   </div>
                   <CardDescription>
-                    Manage your farming profile and basic information
+                    {translateSync('Manage your farming profile and basic information')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -129,7 +130,7 @@ const Settings = () => {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name">Full Name</Label>
+                      <Label htmlFor="name">{translateSync('Full Name')}</Label>
                       <Input
                         id="name"
                         value={settings.profile.name}
@@ -140,7 +141,7 @@ const Settings = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="farmSize">Farm Size</Label>
+                      <Label htmlFor="farmSize">{translateSync('Farm Size')}</Label>
                       <Input
                         id="farmSize"
                         value={settings.profile.farmSize}
@@ -151,7 +152,7 @@ const Settings = () => {
                       />
                     </div>
                     <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="mainCrops">Main Crops</Label>
+                      <Label htmlFor="mainCrops">{translateSync('Main Crops')}</Label>
                       <Textarea
                         id="mainCrops"
                         value={settings.profile.mainCrops}
@@ -159,7 +160,7 @@ const Settings = () => {
                           ...prev,
                           profile: { ...prev.profile, mainCrops: e.target.value }
                         }))}
-                        placeholder="e.g., Rice, Wheat, Cotton"
+                        placeholder={translateSync("e.g., Rice, Wheat, Cotton")}
                       />
                     </div>
                   </div>
@@ -173,22 +174,22 @@ const Settings = () => {
                 <CardHeader className="space-y-1">
                   <div className="flex items-center space-x-3">
                     <Globe className="h-6 w-6 text-primary" />
-                    <CardTitle className="text-xl font-indian">Language & Region</CardTitle>
+                    <CardTitle className="text-xl font-indian">{translateSync('Language & Region')}</CardTitle>
                   </div>
                   <CardDescription>
-                    Choose your preferred language and regional settings
+                    {translateSync('Choose your preferred language and regional settings')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-3">
-                      <Label htmlFor="language">App Language</Label>
+                      <Label htmlFor="language">{translateSync('App Language')}</Label>
                       <Select
                         value={settings.language}
                         onValueChange={(value) => setSettings(prev => ({ ...prev, language: value }))}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select language" />
+                          <SelectValue placeholder={translateSync("Select language")} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="kannada">ಕನ್ನಡ (Kannada)</SelectItem>
@@ -201,7 +202,7 @@ const Settings = () => {
                     </div>
                     
                     <div className="space-y-3">
-                      <Label htmlFor="voiceLang">Voice Language</Label>
+                      <Label htmlFor="voiceLang">{translateSync('Voice Language')}</Label>
                       <Select
                         value={settings.voice.language}
                         onValueChange={(value) => setSettings(prev => ({
@@ -210,7 +211,7 @@ const Settings = () => {
                         }))}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select voice language" />
+                          <SelectValue placeholder={translateSync("Select voice language")} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="kannada">ಕನ್ನಡ (Kannada)</SelectItem>
@@ -230,18 +231,18 @@ const Settings = () => {
                 <CardHeader className="space-y-1">
                   <div className="flex items-center space-x-3">
                     <Mic className="h-6 w-6 text-primary" />
-                    <CardTitle className="text-xl font-indian">Voice Assistant</CardTitle>
+                    <CardTitle className="text-xl font-indian">{translateSync('Voice Assistant')}</CardTitle>
                   </div>
                   <CardDescription>
-                    Configure voice interaction preferences
+                    {translateSync('Configure voice interaction preferences')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                      <Label className="text-base font-medium">Enable Voice Assistant</Label>
+                      <Label className="text-base font-medium">{translateSync('Enable Voice Assistant')}</Label>
                       <p className="text-sm text-muted-foreground">
-                        Allow voice commands and responses
+                        {translateSync('Allow voice commands and responses')}
                       </p>
                     </div>
                     <Switch
@@ -256,7 +257,7 @@ const Settings = () => {
                   <Separator />
                   
                   <div className="space-y-3">
-                    <Label htmlFor="voiceSpeed">Speech Speed</Label>
+                    <Label htmlFor="voiceSpeed">{translateSync('Speech Speed')}</Label>
                     <Select
                       value={settings.voice.speed}
                       onValueChange={(value) => setSettings(prev => ({
@@ -265,25 +266,25 @@ const Settings = () => {
                       }))}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select speed" />
+                        <SelectValue placeholder={translateSync("Select speed")} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="slow">
                           <div className="flex items-center space-x-2">
                             <Volume2 className="h-4 w-4" />
-                            <span>Slow</span>
+                            <span>{translateSync('Slow')}</span>
                           </div>
                         </SelectItem>
                         <SelectItem value="normal">
                           <div className="flex items-center space-x-2">
                             <Volume2 className="h-4 w-4" />
-                            <span>Normal</span>
+                            <span>{translateSync('Normal')}</span>
                           </div>
                         </SelectItem>
                         <SelectItem value="fast">
                           <div className="flex items-center space-x-2">
                             <Volume2 className="h-4 w-4" />
-                            <span>Fast</span>
+                            <span>{translateSync('Fast')}</span>
                           </div>
                         </SelectItem>
                       </SelectContent>
@@ -299,10 +300,10 @@ const Settings = () => {
                 <CardHeader className="space-y-1">
                   <div className="flex items-center space-x-3">
                     <Bell className="h-6 w-6 text-primary" />
-                    <CardTitle className="text-xl font-indian">Notifications</CardTitle>
+                    <CardTitle className="text-xl font-indian">{translateSync('Notifications')}</CardTitle>
                   </div>
                   <CardDescription>
-                    Manage when and how you receive alerts
+                    {translateSync('Manage when and how you receive alerts')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -331,9 +332,9 @@ const Settings = () => {
                     ].map((item) => (
                       <div key={item.key} className="flex items-center justify-between">
                         <div className="space-y-1">
-                          <Label className="text-base font-medium">{item.title}</Label>
+                          <Label className="text-base font-medium">{translateSync(item.title)}</Label>
                           <p className="text-sm text-muted-foreground">
-                            {item.description}
+                            {translateSync(item.description)}
                           </p>
                         </div>
                         <Switch
@@ -359,18 +360,18 @@ const Settings = () => {
                 <CardHeader className="space-y-1">
                   <div className="flex items-center space-x-3">
                     <MapPin className="h-6 w-6 text-primary" />
-                    <CardTitle className="text-xl font-indian">Location Settings</CardTitle>
+                    <CardTitle className="text-xl font-indian">{translateSync('Location Settings')}</CardTitle>
                   </div>
                   <CardDescription>
-                    Manage location preferences for weather and market data
+                    {translateSync('Manage location preferences for weather and market data')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                      <Label className="text-base font-medium">Auto-detect Location</Label>
+                      <Label className="text-base font-medium">{translateSync('Auto-detect Location')}</Label>
                       <p className="text-sm text-muted-foreground">
-                        Automatically use your current location for accurate data
+                        {translateSync('Automatically use your current location for accurate data')}
                       </p>
                     </div>
                     <Switch
@@ -385,7 +386,7 @@ const Settings = () => {
                   {!settings.location.autoDetect && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="city">City</Label>
+                        <Label htmlFor="city">{translateSync('City')}</Label>
                         <Input
                           id="city"
                           value={settings.location.city}
@@ -396,7 +397,7 @@ const Settings = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="state">State</Label>
+                        <Label htmlFor="state">{translateSync('State')}</Label>
                         <Input
                           id="state"
                           value={settings.location.state}
@@ -418,26 +419,26 @@ const Settings = () => {
                 <CardHeader className="space-y-1">
                   <div className="flex items-center space-x-3">
                     <Palette className="h-6 w-6 text-primary" />
-                    <CardTitle className="text-xl font-indian">Theme Settings</CardTitle>
+                    <CardTitle className="text-xl font-indian">{translateSync('Theme Settings')}</CardTitle>
                   </div>
                   <CardDescription>
-                    Personalize the app's appearance
+                    {translateSync("Personalize the app's appearance")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-3">
-                    <Label htmlFor="appTheme">App Theme</Label>
+                    <Label htmlFor="appTheme">{translateSync('App Theme')}</Label>
                     <Select
                       value={settings.theme}
                       onValueChange={(value) => setSettings(prev => ({ ...prev, theme: value }))}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select theme" />
+                        <SelectValue placeholder={translateSync("Select theme")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="light">Light</SelectItem>
-                        <SelectItem value="dark">Dark</SelectItem>
-                        <SelectItem value="system">System</SelectItem>
+                        <SelectItem value="light">{translateSync('Light')}</SelectItem>
+                        <SelectItem value="dark">{translateSync('Dark')}</SelectItem>
+                        <SelectItem value="system">{translateSync('System')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -453,7 +454,7 @@ const Settings = () => {
                 className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground shadow-soft px-8 py-3"
               >
                 <Save className="h-5 w-5 mr-2" />
-                Save Settings
+                {translateSync('Save Settings')}
               </Button>
             </motion.div>
           </motion.div>
