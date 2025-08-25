@@ -97,6 +97,7 @@ const bottomMenuItems = [
 
 export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   const location = useLocation();
+  const { hasFeatureAccess } = usePlan();
   const currentPath = location.pathname;
 
   const isActive = (path: string) => {

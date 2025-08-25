@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Menu, Bell, HelpCircle, User, ChevronDown, Globe, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -20,6 +20,29 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuToggle, isSidebarOpen }) =
   const { currentLanguage, setLanguage, translate, translateSync } = useLanguage();
   const navigate = useNavigate();
   const [translatedTexts, setTranslatedTexts] = useState<Record<string, string>>({});
+  
+  // Refs for click outside detection
+  const notificationsRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
+  const languagesRef = useRef<HTMLDivElement>(null);
+
+  // Click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setShowProfile(false);
+      }
+      if (languagesRef.current && !languagesRef.current.contains(event.target as Node)) {
+        setShowLanguages(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Translate static texts when language changes
   useEffect(() => {
@@ -104,7 +127,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuToggle, isSidebarOpen }) =
         {/* Right section */}
         <div className="flex items-center space-x-2">
           {/* Language Selector */}
-          <div className="relative hidden md:block">
+          <div className="relative hidden md:block" ref={languagesRef}>
             <Button
               variant="outline"
               size="sm"
@@ -165,7 +188,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuToggle, isSidebarOpen }) =
           </div>
 
           {/* Notifications */}
-          <div className="relative">
+          <div className="relative" ref={notificationsRef}>
             <Button
               variant="ghost"
               size="icon"
@@ -206,13 +229,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuToggle, isSidebarOpen }) =
           <Button
             variant="ghost"
             size="icon"
+            onClick={() => navigate('/help')}
             className="hover:bg-primary/10 transition-bounce"
           >
             <HelpCircle className="h-5 w-5" />
           </Button>
 
           {/* Profile */}
-          <div className="relative">
+          <div className="relative" ref={profileRef}>
             <Button
               variant="ghost"
               className="p-1 hover:bg-accent/10 transition-bounce"

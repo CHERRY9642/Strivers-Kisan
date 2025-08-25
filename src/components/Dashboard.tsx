@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useWeather } from '@/hooks/useWeather';
+import { usePlan } from '@/contexts/PlanContext';
 import { 
   Thermometer, 
   Droplets, 
@@ -27,6 +28,7 @@ export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { translate, translateSync, currentLanguage } = useLanguage();
   const { weatherData, loading, error, refetch } = useWeather();
+  const { hasFeatureAccess } = usePlan();
   const [translatedTexts, setTranslatedTexts] = useState<Record<string, string>>({});
 
   // Translate static texts when language changes
@@ -81,17 +83,21 @@ export const Dashboard: React.FC = () => {
 
   const t = (text: string) => translatedTexts[text] || translateSync(text) || text;
 
-  const quickActions = [
-    { title: t('Crop Monitor'), emoji: '🌾', color: 'bg-primary', route: '/crop-monitor' },
-    { title: t('Disease Check'), emoji: '🦠', color: 'bg-secondary', route: '/disease-detector' },
-    { title: t('Market Price'), emoji: '📈', color: 'bg-accent', route: '/market-trends' },
-    { title: t('Gov Schemes'), emoji: '🏛️', color: 'bg-farm-leaf', route: '/government-schemes' },
-    { title: t('AI Assistant'), emoji: '🤖', color: 'bg-purple-500', route: '/chatbot' },
-    { title: t('Grocery Market'), emoji: '🛒', color: 'bg-green-500', route: '/grocery-marketplace' }
+  const allQuickActions = [
+    { title: t('Crop Monitor'), emoji: '🌾', color: 'bg-primary', route: '/crop-monitor', feature: 'crop-monitor' },
+    { title: t('Disease Check'), emoji: '🦠', color: 'bg-secondary', route: '/disease-detector', feature: 'disease-detector' },
+    { title: t('Market Price'), emoji: '📈', color: 'bg-accent', route: '/market-trends', feature: 'market-trends' },
+    { title: t('Gov Schemes'), emoji: '🏛️', color: 'bg-farm-leaf', route: '/government-schemes', feature: 'government-schemes' },
+    { title: t('AI Assistant'), emoji: '🤖', color: 'bg-purple-500', route: '/chatbot', feature: 'ai-assistant' },
+    { title: t('Grocery Market'), emoji: '🛒', color: 'bg-green-500', route: '/grocery-marketplace', feature: 'grocery-marketplace' }
   ];
 
-  const handleQuickAction = (route: string) => {
-    navigate(route);
+  const quickActions = allQuickActions.filter(action => hasFeatureAccess(action.feature));
+
+  const handleQuickAction = (route: string, feature: string) => {
+    if (hasFeatureAccess(feature)) {
+      navigate(route);
+    }
   };
 
   const marketData = [
@@ -172,8 +178,8 @@ export const Dashboard: React.FC = () => {
               transition: { duration: 0.3 }
             }}
             whileTap={{ scale: 0.95 }}
-            className="cursor-pointer"
-            onClick={() => handleQuickAction(action.route)}
+            className={`cursor-pointer ${!hasFeatureAccess(action.feature) ? 'opacity-50' : ''}`}
+            onClick={() => handleQuickAction(action.route, action.feature)}
           >
             <Card className="text-center p-4 hover:shadow-glow hover:bg-gradient-to-br hover:from-background hover:to-accent/5 transition-all duration-300 group">
               <motion.div 
