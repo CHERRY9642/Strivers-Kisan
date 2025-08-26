@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
+import { usePlan } from '@/contexts/PlanContext';
 
 interface SidebarProps {
   onClose: () => void;
