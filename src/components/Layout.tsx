@@ -36,6 +36,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               exit={{ x: -300, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
               className="fixed inset-y-0 left-0 z-40 lg:relative lg:z-auto"
+              style={{ position: 'fixed', top: 0, bottom: 0, left: 0 }}
             >
               <Sidebar onClose={() => setIsSidebarOpen(false)} />
             </motion.div>

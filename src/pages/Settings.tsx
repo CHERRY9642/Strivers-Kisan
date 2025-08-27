@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, Variants } from 'framer-motion';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,7 @@ import {
 
 const Settings = () => {
   const { translateSync } = useLanguage();
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [settings, setSettings] = useState({
     language: 'kannada',
     notifications: {
@@ -50,12 +51,53 @@ const Settings = () => {
     profile: {
       name: 'Farmer Krishna',
       farmSize: '5 acres',
-      mainCrops: 'Rice, Tomato'
+      mainCrops: 'Rice, Tomato',
+      email: '',
+      phone: ''
     },
     theme: 'light'
   });
 
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('agritech_current_user') || 'null');
+    if (user) {
+      setCurrentUser(user);
+      setSettings(prev => ({
+        ...prev,
+        profile: {
+          name: user.name || 'Farmer Krishna',
+          farmSize: user.farmSize || '5 acres',
+          mainCrops: user.mainCrops || 'Rice, Tomato',
+          email: user.email || '',
+          phone: user.phone || ''
+        }
+      }));
+    }
+  }, []);
+
   const handleSave = () => {
+    if (currentUser) {
+      const updatedUser = { 
+        ...currentUser, 
+        name: settings.profile.name,
+        email: settings.profile.email,
+        phone: settings.profile.phone,
+        farmSize: settings.profile.farmSize,
+        mainCrops: settings.profile.mainCrops
+      };
+      
+      // Update in users array
+      const users = JSON.parse(localStorage.getItem('agritech_users') || '[]');
+      const userIndex = users.findIndex((u: any) => u.id === currentUser.id);
+      if (userIndex !== -1) {
+        users[userIndex] = updatedUser;
+        localStorage.setItem('agritech_users', JSON.stringify(users));
+      }
+      
+      // Update current user
+      localStorage.setItem('agritech_current_user', JSON.stringify(updatedUser));
+      setCurrentUser(updatedUser);
+    }
     toast.success('Settings saved successfully!');
   };
 
@@ -137,6 +179,30 @@ const Settings = () => {
                         onChange={(e) => setSettings(prev => ({
                           ...prev,
                           profile: { ...prev.profile, name: e.target.value }
+                        }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">{translateSync('Email')}</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={settings.profile.email}
+                        onChange={(e) => setSettings(prev => ({
+                          ...prev,
+                          profile: { ...prev.profile, email: e.target.value }
+                        }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">{translateSync('Phone Number')}</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={settings.profile.phone}
+                        onChange={(e) => setSettings(prev => ({
+                          ...prev,
+                          profile: { ...prev.profile, phone: e.target.value }
                         }))}
                       />
                     </div>

@@ -129,26 +129,32 @@ const Signup = () => {
     <div className="min-h-screen bg-gradient-to-br from-farm-primary/5 via-background to-farm-accent/5 flex items-center justify-center p-4 relative overflow-hidden">
       <div className="absolute inset-0 bg-grid-pattern opacity-5" />
       
-      {/* Floating leaf animations */}
+      {/* Enhanced floating animations */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-16 left-16 w-8 h-8 text-farm-leaf opacity-30 animate-float-leaf-1">🌿</div>
-        <div className="absolute top-24 right-24 w-6 h-6 text-farm-accent opacity-40 animate-float-leaf-2">🌾</div>
-        <div className="absolute bottom-24 left-1/3 w-7 h-7 text-farm-leaf opacity-25 animate-float-leaf-3">🍃</div>
-        <div className="absolute bottom-16 right-1/4 w-5 h-5 text-farm-accent opacity-35 animate-float-leaf-4">🌿</div>
-        <div className="absolute top-2/3 left-12 w-6 h-6 text-farm-leaf opacity-20 animate-float-leaf-5">🌾</div>
-        <div className="absolute top-1/4 right-12 w-8 h-8 text-farm-accent opacity-30 animate-float-leaf-1">🍃</div>
-        <div className="absolute top-1/2 right-1/2 w-4 h-4 text-farm-leaf opacity-15 animate-float-leaf-2">🌿</div>
+        <div className="absolute top-20 left-10 w-8 h-8 text-farm-leaf opacity-30 animate-float-leaf-1 animate-pulse">🌿</div>
+        <div className="absolute top-32 right-20 w-6 h-6 text-farm-accent opacity-40 animate-float-leaf-2 animate-bounce">🌾</div>
+        <div className="absolute bottom-32 left-1/4 w-7 h-7 text-farm-leaf opacity-25 animate-float-leaf-3">🍃</div>
+        <div className="absolute bottom-20 right-1/3 w-5 h-5 text-farm-accent opacity-35 animate-float-leaf-4 animate-pulse">🌿</div>
+        <div className="absolute top-1/2 left-20 w-6 h-6 text-farm-leaf opacity-20 animate-float-leaf-5">🌾</div>
+        <div className="absolute top-1/3 right-10 w-8 h-8 text-farm-accent opacity-30 animate-float-leaf-1">🍃</div>
+        
+        {/* Additional animated elements */}
+        <div className="absolute top-1/4 left-1/3 w-4 h-4 text-farm-sun opacity-60 animate-spin-slow">☀️</div>
+        <div className="absolute bottom-1/4 right-1/4 w-5 h-5 text-farm-leaf opacity-45 animate-wiggle">🌱</div>
+        <div className="absolute top-3/4 left-16 w-6 h-6 text-farm-accent opacity-35 animate-float">🌾</div>
+        <div className="absolute top-16 left-1/2 w-3 h-3 text-farm-leaf opacity-50 animate-bounce">🌿</div>
+        <div className="absolute bottom-1/3 left-3/4 w-4 h-4 text-farm-sun opacity-40 animate-ping">⭐</div>
       </div>
       
-      <Card className="w-full max-w-4xl shadow-2xl border-0 bg-card/80 backdrop-blur-sm animate-fade-in">
+      <Card className="w-full max-w-4xl shadow-2xl border-0 bg-card/80 backdrop-blur-sm animate-fade-in hover:shadow-3xl transition-all duration-300">
         <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-farm-primary to-farm-accent rounded-full flex items-center justify-center">
-            <Leaf className="w-8 h-8 text-white" />
+          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-farm-primary to-farm-accent rounded-full flex items-center justify-center animate-pulse shadow-lg">
+            <Leaf className="w-8 h-8 text-white animate-wiggle" />
           </div>
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-farm-primary to-farm-accent bg-clip-text text-transparent">
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-farm-primary via-farm-accent to-farm-primary bg-clip-text text-transparent animate-gradient-text">
             {translateSync("Join AgriTech")}
           </CardTitle>
-          <CardDescription className="text-muted-foreground">
+          <CardDescription className="text-muted-foreground animate-fade-in-up">
             {translateSync("Create your account and choose your farming plan")}
           </CardDescription>
         </CardHeader>
