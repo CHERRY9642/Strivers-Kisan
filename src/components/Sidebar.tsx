@@ -111,7 +111,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
 
   return (
     <motion.div
-      className="w-80 h-screen bg-card/95 backdrop-blur-md border-r border-border shadow-card"
+      className="w-80 h-screen bg-card/95 backdrop-blur-md border-r border-border shadow-card flex flex-col"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
@@ -137,7 +137,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       </div>
 
       {/* Main Menu */}
-      <div className="flex-1 p-4 space-y-2">
+      <div className="flex-1 overflow-y-auto p-4 space-y-2">
         <div className="mb-6">
           <h3 className="text-sm font-medium text-muted-foreground mb-3 px-2">
             Main Features

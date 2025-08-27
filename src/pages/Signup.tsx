@@ -36,11 +36,17 @@ const plans = [
     price: 'Free',
     features: [
       'Voice Assistant & Dashboard',
+      'Disease Detector AI',
       'Weather Updates',
       'Government Schemes Access',
-      'Market Trends Data'
+      'Market Trends Data',
+      'Grocery Marketplace',
+      'Cold Storage Access'
     ],
-    description: 'Access essential features for smart farming, excluding advanced crop monitoring and sensors.'
+    excludedFeatures: [
+      'Crop Monitor (Premium sensors required)'
+    ],
+    description: 'Access essential features for smart farming. Crop monitoring requires premium sensors.'
   },
   {
     id: 'premium',
@@ -83,7 +89,7 @@ const Signup = () => {
   });
 
   const onSubmit = (data: SignupForm) => {
-    // Save user to localStorage
+    // Save user to localStorage and set plan context
     const users = JSON.parse(localStorage.getItem('agritech_users') || '[]');
     const newUser = {
       id: Date.now().toString(),
@@ -100,7 +106,12 @@ const Signup = () => {
       description: translateSync("Welcome to AgriTech! Your account has been created."),
     });
     
-    navigate('/profile');
+    // Navigate based on selected plan
+    if (data.plan === 'free') {
+      navigate('/');
+    } else {
+      navigate('/profile');
+    }
   };
 
   const nextStep = () => {
@@ -115,8 +126,19 @@ const Signup = () => {
   const selectedPlan = plans.find(p => p.id === form.watch('plan'));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-farm-primary/5 via-background to-farm-accent/5 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-farm-primary/5 via-background to-farm-accent/5 flex items-center justify-center p-4 relative overflow-hidden">
       <div className="absolute inset-0 bg-grid-pattern opacity-5" />
+      
+      {/* Floating leaf animations */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-16 left-16 w-8 h-8 text-farm-leaf opacity-30 animate-float-leaf-1">🌿</div>
+        <div className="absolute top-24 right-24 w-6 h-6 text-farm-accent opacity-40 animate-float-leaf-2">🌾</div>
+        <div className="absolute bottom-24 left-1/3 w-7 h-7 text-farm-leaf opacity-25 animate-float-leaf-3">🍃</div>
+        <div className="absolute bottom-16 right-1/4 w-5 h-5 text-farm-accent opacity-35 animate-float-leaf-4">🌿</div>
+        <div className="absolute top-2/3 left-12 w-6 h-6 text-farm-leaf opacity-20 animate-float-leaf-5">🌾</div>
+        <div className="absolute top-1/4 right-12 w-8 h-8 text-farm-accent opacity-30 animate-float-leaf-1">🍃</div>
+        <div className="absolute top-1/2 right-1/2 w-4 h-4 text-farm-leaf opacity-15 animate-float-leaf-2">🌿</div>
+      </div>
       
       <Card className="w-full max-w-4xl shadow-2xl border-0 bg-card/80 backdrop-blur-sm animate-fade-in">
         <CardHeader className="text-center space-y-4">
@@ -344,6 +366,21 @@ const Signup = () => {
                                       </li>
                                     ))}
                                   </ul>
+                                  {plan.excludedFeatures && plan.excludedFeatures.length > 0 && (
+                                    <div className="mt-4 pt-4 border-t border-border">
+                                      <p className="text-xs text-muted-foreground mb-2">
+                                        {translateSync("Not included:")}
+                                      </p>
+                                      <ul className="space-y-1">
+                                        {plan.excludedFeatures.map((feature, index) => (
+                                          <li key={index} className="flex items-center gap-2 text-xs text-muted-foreground">
+                                            <div className="w-3 h-3 rounded-full border border-muted-foreground/30" />
+                                            {translateSync(feature)}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
                                   {field.value === plan.id && (
                                     <div className="mt-4 text-center">
                                       <div className="inline-flex items-center gap-2 bg-farm-primary text-white px-3 py-1 rounded-full text-sm">

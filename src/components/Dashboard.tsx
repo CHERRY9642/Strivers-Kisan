@@ -28,8 +28,21 @@ export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { translate, translateSync, currentLanguage } = useLanguage();
   const { weatherData, loading, error, refetch } = useWeather();
-  const { hasFeatureAccess } = usePlan();
+  const { hasFeatureAccess, setPlan } = usePlan();
   const [translatedTexts, setTranslatedTexts] = useState<Record<string, string>>({});
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // Load user data and set plan
+  useEffect(() => {
+    const user = localStorage.getItem('agritech_current_user');
+    if (user) {
+      const userData = JSON.parse(user);
+      setCurrentUser(userData);
+      if (userData.plan) {
+        setPlan(userData.plan);
+      }
+    }
+  }, [setPlan]);
 
   // Translate static texts when language changes
   useEffect(() => {

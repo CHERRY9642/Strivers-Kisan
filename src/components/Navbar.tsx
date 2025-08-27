@@ -16,6 +16,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuToggle, isSidebarOpen }) =
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showLanguages, setShowLanguages] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   
   const { currentLanguage, setLanguage, translate, translateSync } = useLanguage();
   const navigate = useNavigate();
@@ -25,6 +26,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuToggle, isSidebarOpen }) =
   const notificationsRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const languagesRef = useRef<HTMLDivElement>(null);
+
+  // Get current user from localStorage
+  useEffect(() => {
+    const user = localStorage.getItem('agritech_current_user');
+    if (user) {
+      setCurrentUser(JSON.parse(user));
+    }
+  }, []);
 
   // Click outside handler
   useEffect(() => {
@@ -264,8 +273,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuToggle, isSidebarOpen }) =
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <h4 className="font-semibold">{translateSync('Farmers Friend')}</h4>
-                    <p className="text-sm text-muted-foreground">{translateSync('Karnataka, India')}</p>
+                    <h4 className="font-semibold">{currentUser?.name || translateSync('Farmers Friend')}</h4>
+                    <p className="text-sm text-muted-foreground">{currentUser?.email || translateSync('Karnataka, India')}</p>
                   </div>
                 </div>
                 <div className="space-y-2">

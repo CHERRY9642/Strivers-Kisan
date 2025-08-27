@@ -180,6 +180,26 @@ All colors MUST be HSL. Inspired by rural agriculture and nature.
     animation: float 3s ease-in-out infinite;
   }
 
+  .animate-float-leaf-1 {
+    animation: float-leaf-1 8s ease-in-out infinite;
+  }
+
+  .animate-float-leaf-2 {
+    animation: float-leaf-2 10s ease-in-out infinite;
+  }
+
+  .animate-float-leaf-3 {
+    animation: float-leaf-3 7s ease-in-out infinite;
+  }
+
+  .animate-float-leaf-4 {
+    animation: float-leaf-4 9s ease-in-out infinite;
+  }
+
+  .animate-float-leaf-5 {
+    animation: float-leaf-5 11s ease-in-out infinite;
+  }
+
   /* Custom shadows */
   .shadow-soft {
     box-shadow: var(--shadow-soft);
@@ -233,6 +253,38 @@ All colors MUST be HSL. Inspired by rural agriculture and nature.
   @keyframes ripple {
     0% { transform: scale(0); opacity: 1; }
     100% { transform: scale(4); opacity: 0; }
+  }
+
+  @keyframes float-leaf-1 {
+    0%, 100% { transform: translateY(0px) translateX(0px) rotate(0deg); }
+    33% { transform: translateY(-15px) translateX(10px) rotate(5deg); }
+    66% { transform: translateY(-5px) translateX(-8px) rotate(-3deg); }
+  }
+
+  @keyframes float-leaf-2 {
+    0%, 100% { transform: translateY(0px) translateX(0px) rotate(0deg); }
+    25% { transform: translateY(-10px) translateX(-12px) rotate(-7deg); }
+    50% { transform: translateY(-20px) translateX(5px) rotate(4deg); }
+    75% { transform: translateY(-8px) translateX(8px) rotate(-2deg); }
+  }
+
+  @keyframes float-leaf-3 {
+    0%, 100% { transform: translateY(0px) translateX(0px) rotate(0deg); }
+    40% { transform: translateY(-12px) translateX(15px) rotate(8deg); }
+    80% { transform: translateY(-3px) translateX(-10px) rotate(-5deg); }
+  }
+
+  @keyframes float-leaf-4 {
+    0%, 100% { transform: translateY(0px) translateX(0px) rotate(0deg); }
+    30% { transform: translateY(-18px) translateX(-7px) rotate(-6deg); }
+    70% { transform: translateY(-6px) translateX(12px) rotate(3deg); }
+  }
+
+  @keyframes float-leaf-5 {
+    0%, 100% { transform: translateY(0px) translateX(0px) rotate(0deg); }
+    20% { transform: translateY(-8px) translateX(6px) rotate(2deg); }
+    60% { transform: translateY(-14px) translateX(-9px) rotate(-4deg); }
+    90% { transform: translateY(-2px) translateX(3px) rotate(1deg); }
   }
 
   /* Responsive text sizes for farming content */

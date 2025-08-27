@@ -29,7 +29,7 @@ export const PlanProvider: React.FC<PlanProviderProps> = ({ children }) => {
 
   const hasFeatureAccess = (feature: string): boolean => {
     const featureAccess = {
-      free: ['weather', 'market-trends', 'government-schemes', 'ai-assistant', 'grocery-marketplace', 'cold-storage'],
+      free: ['disease-detector', 'weather', 'market-trends', 'government-schemes', 'ai-assistant', 'grocery-marketplace', 'cold-storage'],
       premium: ['crop-monitor', 'disease-detector', 'weather', 'market-trends', 'government-schemes', 'ai-assistant', 'grocery-marketplace', 'cold-storage'],
       enterprise: ['crop-monitor', 'disease-detector', 'weather', 'market-trends', 'government-schemes', 'ai-assistant', 'grocery-marketplace', 'cold-storage', 'advanced-analytics']
     };
