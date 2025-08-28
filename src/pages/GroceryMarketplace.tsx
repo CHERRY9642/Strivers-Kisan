@@ -56,7 +56,13 @@ const GroceryMarketplace = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showAddProduct, setShowAddProduct] = useState(false);
-  const [showCart, setShowCart] = useState(false); // New state for cart visibility
+  const [showCart, setShowCart] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [selectedProductForFeedback, setSelectedProductForFeedback] = useState<Product | null>(null);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [userRating, setUserRating] = useState(0);
+  const [userFeedback, setUserFeedback] = useState('');
+  const [hoveredStar, setHoveredStar] = useState(0);
   const [newProduct, setNewProduct] = useState({
     name: '',
     price: '',
@@ -66,7 +72,7 @@ const GroceryMarketplace = () => {
     category: 'vegetables',
     isOrganic: false
   });
-  const [cartItems, setCartItems] = useState<CartItem[]>([]); // New state for cart items
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
   const [products, setProducts] = useState<Product[]>([
     {
@@ -255,6 +261,67 @@ const GroceryMarketplace = () => {
       );
     });
   };
+
+  const toggleFavorite = (productId: string) => {
+    setFavorites(prev => {
+      const isFavorited = prev.includes(productId);
+      if (isFavorited) {
+        toast({
+          title: "Removed from favorites",
+          description: "Product removed from your favorites list.",
+        });
+        return prev.filter(id => id !== productId);
+      } else {
+        toast({
+          title: "Added to favorites",
+          description: "Product added to your favorites list.",
+        });
+        return [...prev, productId];
+      }
+    });
+  };
+
+  const openFeedbackModal = (product: Product) => {
+    setSelectedProductForFeedback(product);
+    setUserRating(0);
+    setUserFeedback('');
+    setShowFeedback(true);
+  };
+
+  const submitFeedback = () => {
+    if (!selectedProductForFeedback || userRating === 0) return;
+    
+    toast({
+      title: "Feedback submitted",
+      description: `Thank you for rating ${selectedProductForFeedback.name}!`,
+    });
+    
+    setShowFeedback(false);
+    setSelectedProductForFeedback(null);
+    setUserRating(0);
+    setUserFeedback('');
+  };
+
+  const AnimatedStar = ({ index, filled, onHover, onClick }: {
+    index: number;
+    filled: boolean;
+    onHover: (index: number) => void;
+    onClick: (index: number) => void;
+  }) => (
+    <motion.div
+      whileHover={{ scale: 1.2 }}
+      whileTap={{ scale: 0.9 }}
+      onHoverStart={() => onHover(index)}
+      onClick={() => onClick(index)}
+      className="cursor-pointer"
+    >
+      <Star
+        className={`h-6 w-6 transition-colors ${
+          filled ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground'
+        }`}
+      />
+    </motion.div>
+  );
 
   return (
     <Layout>
@@ -466,12 +533,38 @@ const GroceryMarketplace = () => {
                             <ShoppingCart className="h-4 w-4 mr-2" />
                             Buy Now
                           </Button>
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => openFeedbackModal(product)}
+                          >
                             <MessageCircle className="h-4 w-4" />
                           </Button>
-                          <Button variant="outline" size="sm">
-                            <Heart className="h-4 w-4" />
-                          </Button>
+                          <motion.div
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            <Button 
+                              variant={favorites.includes(product.id) ? "default" : "outline"} 
+                              size="sm"
+                              onClick={() => toggleFavorite(product.id)}
+                            >
+                              <motion.div
+                                animate={{ 
+                                  scale: favorites.includes(product.id) ? [1, 1.3, 1] : 1,
+                                  rotate: favorites.includes(product.id) ? [0, 15, -15, 0] : 0 
+                                }}
+                                transition={{ duration: 0.3 }}
+                              >
+                                <Heart 
+                                  className={`h-4 w-4 ${
+                                    favorites.includes(product.id) 
+                                      ? 'text-red-500 fill-red-500' 
+                                      : ''
+                                  }`} 
+                                />
+                              </motion.div>
+                            </Button>
+                          </motion.div>
                         </div>
                       </CardContent>
                     </>
@@ -509,13 +602,40 @@ const GroceryMarketplace = () => {
                               {product.quantity} {product.unit} available
                             </div>
                             <div className="flex space-x-2 mt-2">
-                              <Button size="sm">
+                              <Button size="sm" onClick={() => addToCart(product)}>
                                 <ShoppingCart className="h-4 w-4 mr-1" />
                                 Buy
                               </Button>
-                              <Button variant="outline" size="sm">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => openFeedbackModal(product)}
+                              >
                                 <MessageCircle className="h-4 w-4" />
                               </Button>
+                              <motion.div whileTap={{ scale: 0.9 }}>
+                                <Button 
+                                  variant={favorites.includes(product.id) ? "default" : "outline"} 
+                                  size="sm"
+                                  onClick={() => toggleFavorite(product.id)}
+                                >
+                                  <motion.div
+                                    animate={{ 
+                                      scale: favorites.includes(product.id) ? [1, 1.3, 1] : 1,
+                                      rotate: favorites.includes(product.id) ? [0, 15, -15, 0] : 0 
+                                    }}
+                                    transition={{ duration: 0.3 }}
+                                  >
+                                    <Heart 
+                                      className={`h-4 w-4 ${
+                                        favorites.includes(product.id) 
+                                          ? 'text-red-500 fill-red-500' 
+                                          : ''
+                                      }`} 
+                                    />
+                                  </motion.div>
+                                </Button>
+                              </motion.div>
                             </div>
                           </div>
                         </div>
@@ -527,6 +647,79 @@ const GroceryMarketplace = () => {
             ))}
           </AnimatePresence>
         </motion.div>
+
+        {/* Feedback Modal */}
+        <AnimatePresence>
+          {showFeedback && selectedProductForFeedback && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+              onClick={() => setShowFeedback(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-md"
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Rate & Review</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedProductForFeedback.name} by {selectedProductForFeedback.seller}
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Your Rating</label>
+                      <div 
+                        className="flex space-x-1"
+                        onMouseLeave={() => setHoveredStar(0)}
+                      >
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <AnimatedStar
+                            key={star}
+                            index={star}
+                            filled={star <= (hoveredStar || userRating)}
+                            onHover={setHoveredStar}
+                            onClick={setUserRating}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium">Your Feedback (Optional)</label>
+                      <Textarea
+                        value={userFeedback}
+                        onChange={(e) => setUserFeedback(e.target.value)}
+                        placeholder="Share your experience with this product..."
+                        rows={3}
+                        className="mt-1"
+                      />
+                    </div>
+
+                    <div className="flex space-x-2 pt-4">
+                      <Button 
+                        onClick={submitFeedback} 
+                        className="flex-1"
+                        disabled={userRating === 0}
+                      >
+                        Submit Review
+                      </Button>
+                      <Button variant="outline" onClick={() => setShowFeedback(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Add Product Modal */}
         <AnimatePresence>
