@@ -35,7 +35,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -300, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="fixed inset-y-0 left-0 z-40 lg:relative lg:z-auto"
+              className="fixed inset-y-0 left-0 z-40"
               style={{ position: 'fixed', top: 0, bottom: 0, left: 0 }}
             >
               <Sidebar onClose={() => setIsSidebarOpen(false)} />
@@ -54,12 +54,18 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           />
         )}
 
-        {/* Main content */}
-        <main className="flex-1 pt-16 px-4 pb-20 lg:px-8">
+        {/* Main content with responsive sidebar spacing */}
+        <main 
+          className={`
+            flex-1 pt-16 px-4 pb-20 lg:px-8 transition-all duration-300 ease-in-out
+            ${isSidebarOpen ? 'lg:ml-80 ml-0' : 'ml-0'}
+          `}
+        >
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
+            className="w-full max-w-full"
           >
             {children}
           </motion.div>
