@@ -43,7 +43,7 @@ const Login = () => {
         title: translateSync("Login Successful"),
         description: translateSync("Welcome back to AgriTech!"),
       });
-      navigate('/profile');
+      navigate('/dashboard');
     } else {
       toast({
         title: translateSync("Login Failed"),
