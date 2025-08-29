@@ -139,16 +139,16 @@ export default {
 				}
 			},
 			animation: {
-				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out',
-				'bounce-gentle': 'bounce-gentle 2s infinite',
-				'pulse-soft': 'pulse-soft 2s infinite',
-				'float': 'float 3s ease-in-out infinite',
-				'ripple': 'ripple 0.6s linear',
-				'pulse-slow': 'pulse-slow 3s infinite ease-in-out',
-				'wave': 'wave 1.5s infinite ease-in-out',
-				'pulse-fast': 'pulse-fast 1s infinite ease-in-out',
-				'spin-slow': 'spin-slow 5s linear infinite'
+				'accordion-down': 'accordion-down 0.4s ease-out',
+				'accordion-up': 'accordion-up 0.4s ease-out',
+				'bounce-gentle': 'bounce-gentle 4s infinite',
+				'pulse-soft': 'pulse-soft 4s infinite',
+				'float': 'float 6s ease-in-out infinite',
+				'ripple': 'ripple 1.2s linear',
+				'pulse-slow': 'pulse-slow 6s infinite ease-in-out',
+				'wave': 'wave 3s infinite ease-in-out',
+				'pulse-fast': 'pulse-fast 2s infinite ease-in-out',
+				'spin-slow': 'spin-slow 10s linear infinite'
 			}
 		}
 	},
