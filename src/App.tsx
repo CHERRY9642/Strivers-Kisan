@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { PlanProvider } from "@/contexts/PlanContext";
+import LandingPage from "./pages/LandingPage";
+import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
 import CropMonitor from "./pages/CropMonitor";
 import DiseaseDetector from "./pages/DiseaseDetector";
@@ -31,7 +33,8 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/crop-monitor" element={<CropMonitor />} />
               <Route path="/disease-detector" element={<DiseaseDetector />} />
               <Route path="/market-trends" element={<MarketTrends />} />
