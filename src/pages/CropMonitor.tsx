@@ -17,7 +17,6 @@ const CropMonitor = () => {
   const { translateSync } = useLanguage();
   const [sensorData, setSensorData] = useState<SensorData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [notifications, setNotifications] = useState<string[]>([]);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const fetchSensorData = async () => {
@@ -26,13 +25,6 @@ const CropMonitor = () => {
       const data = await response.json();
       setSensorData(data);
       setLastUpdated(new Date());
-      // Dummy notification generation for now
-      if (data.temperature > 30) {
-        setNotifications(prev => ["High temperature detected!", ...prev].slice(0, 5));
-      }
-      if (data.moisture < 20) {
-        setNotifications(prev => ["Low moisture detected! Consider irrigation.", ...prev].slice(0, 5));
-      }
     } catch (err) {
       console.error('Error fetching sensor data:', err);
       setError('Failed to fetch sensor data. Please try again.');
@@ -54,22 +46,164 @@ const CropMonitor = () => {
         return value >= 60 && value <= 80 ? 'ideal' : value < 50 || value > 90 ? 'critical' : 'warning';
       case 'moisture':
         return value >= 40 && value <= 60 ? 'ideal' : value < 30 || value > 70 ? 'critical' : 'warning';
+      case 'light':
+        return value >= 5000 && value <= 10000 ? 'ideal' : value < 3000 || value > 12000 ? 'critical' : 'warning';
       default:
         return 'unknown';
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'ideal':
-        return 'bg-green-500';
-      case 'warning':
-        return 'bg-yellow-500';
-      case 'critical':
-        return 'bg-red-500';
+  const getSensorRange = (type: keyof SensorData) => {
+    switch (type) {
+      case 'temperature':
+        return { min: 0, max: 50, ideal: [20, 30], warning: [15, 35] };
+      case 'humidity':
+        return { min: 0, max: 100, ideal: [60, 80], warning: [50, 90] };
+      case 'moisture':
+        return { min: 0, max: 100, ideal: [40, 60], warning: [30, 70] };
+      case 'light':
+        return { min: 0, max: 15000, ideal: [5000, 10000], warning: [3000, 12000] };
       default:
-        return 'bg-gray-400';
+        return { min: 0, max: 100, ideal: [0, 100], warning: [0, 100] };
     }
+  };
+
+  const AnimatedGauge = ({ type, value, label, icon: Icon, color }: {
+    type: keyof SensorData;
+    value: number;
+    label: string;
+    icon: React.ComponentType<any>;
+    color: string;
+  }) => {
+    const status = getSensorStatus(type, value);
+    const range = getSensorRange(type);
+    const percentage = Math.min(Math.max((value - range.min) / (range.max - range.min) * 100, 0), 100);
+    
+    const isWarning = status === 'warning';
+    const isCritical = status === 'critical';
+    
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8, y: 50 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.6, type: "spring", stiffness: 80, damping: 12 }}
+        whileHover={{ scale: 1.02 }}
+        className={`relative overflow-hidden ${
+          isCritical ? 'animate-pulse' : isWarning ? 'animate-bounce-gentle' : ''
+        }`}
+      >
+        <Card className={`h-full ${color} text-white rounded-3xl shadow-2xl transition-all duration-500 ease-in-out ${
+          isCritical ? 'shadow-red-500/50 ring-4 ring-red-500/30' : 
+          isWarning ? 'shadow-yellow-500/50 ring-2 ring-yellow-500/30' : 
+          'shadow-green-500/50'
+        }`}>
+          {/* Glowing background effect for warnings/critical */}
+          {(isWarning || isCritical) && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0.3, 0.6, 0.3] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              className={`absolute inset-0 ${
+                isCritical ? 'bg-red-500/20' : 'bg-yellow-500/20'
+              } rounded-3xl`}
+            />
+          )}
+          
+          <CardHeader className="pb-4 relative z-10">
+            <CardTitle className="flex items-center justify-between text-xl font-bold">
+              <div className="flex items-center space-x-3">
+                <motion.div
+                  animate={isCritical ? { 
+                    rotate: [0, -10, 10, -10, 0],
+                    scale: [1, 1.1, 1]
+                  } : { rotate: 360 }}
+                  transition={{ 
+                    duration: isCritical ? 0.5 : 8, 
+                    repeat: Infinity, 
+                    ease: isCritical ? "easeInOut" : "linear" 
+                  }}
+                >
+                  <Icon className="h-8 w-8" />
+                </motion.div>
+                <span>{label}</span>
+              </div>
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
+                className={`w-4 h-4 rounded-full ${
+                  status === 'ideal' ? 'bg-green-400' :
+                  status === 'warning' ? 'bg-yellow-400' : 'bg-red-400'
+                } shadow-lg`}
+              />
+            </CardTitle>
+          </CardHeader>
+
+          <CardContent className="relative z-10">
+            {/* Animated value display */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+              className="text-center mb-6"
+            >
+              <motion.p
+                key={value}
+                initial={{ scale: 1.2, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className={`text-4xl font-extrabold ${
+                  isCritical ? 'animate-pulse' : ''
+                }`}
+              >
+                {value}{type === 'light' ? ' lux' : type === 'temperature' ? '°C' : '%'}
+              </motion.p>
+              <p className="text-sm opacity-80 mt-1">
+                Status: <span className="font-semibold capitalize">{status}</span>
+              </p>
+            </motion.div>
+
+            {/* Animated gauge bar */}
+            <div className="relative h-6 bg-white/20 rounded-full overflow-hidden">
+              {/* Background zones */}
+              <div className="absolute inset-0 flex">
+                <div className="bg-red-500/60 flex-1"></div>
+                <div className="bg-yellow-500/60 flex-1"></div>
+                <div className="bg-green-500/60 flex-1"></div>
+                <div className="bg-yellow-500/60 flex-1"></div>
+                <div className="bg-red-500/60 flex-1"></div>
+              </div>
+              
+              {/* Animated fill */}
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${percentage}%` }}
+                transition={{ duration: 1.2, ease: "easeInOut", delay: 0.6 }}
+                className={`h-full ${
+                  status === 'ideal' ? 'bg-white' :
+                  status === 'warning' ? 'bg-yellow-200' : 'bg-red-200'
+                } shadow-lg`}
+              />
+              
+              {/* Needle indicator */}
+              <motion.div
+                initial={{ left: '0%' }}
+                animate={{ left: `${Math.max(0, Math.min(percentage - 1, 98))}%` }}
+                transition={{ duration: 1.2, ease: "easeInOut", delay: 0.8 }}
+                className="absolute top-0 w-1 h-full bg-white shadow-2xl"
+              />
+            </div>
+
+            {/* Range indicators */}
+            <div className="flex justify-between text-xs mt-2 opacity-80">
+              <span>{range.min}</span>
+              <span className="font-semibold">Ideal: {range.ideal[0]}-{range.ideal[1]}</span>
+              <span>{range.max}</span>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
   };
 
   const renderContent = () => {
@@ -155,109 +289,110 @@ const CropMonitor = () => {
     };
 
     return (
-      <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
-        initial="hidden"
-        animate="visible"
-        variants={{
-          hidden: { opacity: 0 },
-          visible: {
-            opacity: 1,
-            transition: {
-              staggerChildren: 0.15,
+      <div className="space-y-8">
+        {/* Sensor Gauges */}
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: { opacity: 0 },
+            visible: {
+              opacity: 1,
+              transition: {
+                staggerChildren: 0.2,
+              },
             },
-          },
-        }}
-      >
-        <motion.div variants={cardVariants} whileHover={{ scale: 1.03, rotate: 1 }} whileTap={{ scale: 0.98 }}>
-          <Card className="h-full bg-gradient-to-br from-red-500 to-red-700 text-white rounded-3xl shadow-2xl transition-all duration-300 ease-in-out hover:shadow-red-400/50">
+          }}
+        >
+          <AnimatedGauge
+            type="temperature"
+            value={sensorData.temperature}
+            label={translateSync('Temperature')}
+            icon={Thermometer}
+            color="bg-gradient-to-br from-red-500 to-red-700"
+          />
+          <AnimatedGauge
+            type="humidity"
+            value={sensorData.humidity}
+            label={translateSync('Humidity')}
+            icon={Droplets}
+            color="bg-gradient-to-br from-blue-500 to-blue-700"
+          />
+          <AnimatedGauge
+            type="moisture"
+            value={sensorData.moisture}
+            label={translateSync('Moisture')}
+            icon={Leaf}
+            color="bg-gradient-to-br from-green-500 to-green-700"
+          />
+          <AnimatedGauge
+            type="light"
+            value={sensorData.light}
+            label={translateSync('Light Intensity')}
+            icon={Sun}
+            color="bg-gradient-to-br from-yellow-500 to-yellow-700"
+          />
+        </motion.div>
+
+        {/* System Status Panel */}
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8, duration: 0.8, ease: "easeOut" }}
+        >
+          <Card className="bg-gradient-to-r from-slate-50 to-slate-100 shadow-2xl rounded-3xl border border-slate-200">
             <CardHeader className="pb-4">
-              <CardTitle className="flex items-center space-x-3 text-2xl font-bold">
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-                >
-                  <Thermometer className="h-10 w-10" />
-                </motion.div>
-                <span>{translateSync('Temperature')}</span>
+              <CardTitle className="text-2xl font-bold text-slate-800 flex items-center">
+                <CheckCircle className="h-8 w-8 mr-3 text-green-600" />
+                {translateSync('System Status & Recommendations')}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <motion.p variants={valueVariants} className="text-5xl font-extrabold">
-                {sensorData.temperature}°C
-              </motion.p>
-              <p className="text-lg opacity-80 mt-2">Ideal: 20-30°C</p>
-              <div className={`h-2 w-full rounded-full mt-4 ${getStatusColor(getSensorStatus('temperature', sensorData.temperature))}`} />
-            </CardContent>
-          </Card>
-        </motion.div>
-        <motion.div variants={cardVariants} whileHover={{ scale: 1.03, rotate: -1 }} whileTap={{ scale: 0.98 }}>
-          <Card className="h-full bg-gradient-to-br from-blue-500 to-blue-700 text-white rounded-3xl shadow-2xl transition-all duration-300 ease-in-out hover:shadow-blue-400/50">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center space-x-3 text-2xl font-bold">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Overall Health */}
                 <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 1, duration: 0.5 }}
+                  className="text-center p-4 bg-white rounded-2xl shadow-lg"
                 >
-                  <Droplets className="h-10 w-10" />
+                  <div className="text-4xl mb-2">🌱</div>
+                  <h3 className="font-bold text-slate-700 mb-1">Crop Health</h3>
+                  <p className="text-2xl font-bold text-green-600">Excellent</p>
+                  <p className="text-sm text-slate-500">All parameters optimal</p>
                 </motion.div>
-                <span>{translateSync('Humidity')}</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <motion.p variants={valueVariants} className="text-5xl font-extrabold">
-                {sensorData.humidity}%
-              </motion.p>
-              <p className="text-lg opacity-80 mt-2">Ideal: 60-80%</p>
-              <div className={`h-2 w-full rounded-full mt-4 ${getStatusColor(getSensorStatus('humidity', sensorData.humidity))}`} />
-            </CardContent>
-          </Card>
-        </motion.div>
-        <motion.div variants={cardVariants} whileHover={{ scale: 1.03, rotate: 1 }} whileTap={{ scale: 0.98 }}>
-          <Card className="h-full bg-gradient-to-br from-green-500 to-green-700 text-white rounded-3xl shadow-2xl transition-all duration-300 ease-in-out hover:shadow-green-400/50">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center space-x-3 text-2xl font-bold">
+
+                {/* Active Alerts */}
                 <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 1.2, duration: 0.5 }}
+                  className="text-center p-4 bg-white rounded-2xl shadow-lg"
                 >
-                  <Leaf className="h-10 w-10" />
+                  <div className="text-4xl mb-2">🔔</div>
+                  <h3 className="font-bold text-slate-700 mb-1">Active Alerts</h3>
+                  <p className="text-2xl font-bold text-blue-600">0</p>
+                  <p className="text-sm text-slate-500">No issues detected</p>
                 </motion.div>
-                <span>{translateSync('Moisture')}</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <motion.p variants={valueVariants} className="text-5xl font-extrabold">
-                {sensorData.moisture}%
-              </motion.p>
-              <p className="text-lg opacity-80 mt-2">Ideal: 40-60%</p>
-              <div className={`h-2 w-full rounded-full mt-4 ${getStatusColor(getSensorStatus('moisture', sensorData.moisture))}`} />
-            </CardContent>
-          </Card>
-        </motion.div>
-        <motion.div variants={cardVariants} whileHover={{ scale: 1.03, rotate: -1 }} whileTap={{ scale: 0.98 }}>
-          <Card className="h-full bg-gradient-to-br from-yellow-500 to-yellow-700 text-white rounded-3xl shadow-2xl transition-all duration-300 ease-in-out hover:shadow-yellow-400/50">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center space-x-3 text-2xl font-bold">
+
+                {/* Next Action */}
                 <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 1.4, duration: 0.5 }}
+                  className="text-center p-4 bg-white rounded-2xl shadow-lg"
                 >
-                  <Sun className="h-10 w-10" />
+                  <div className="text-4xl mb-2">💡</div>
+                  <h3 className="font-bold text-slate-700 mb-1">Next Action</h3>
+                  <p className="text-sm font-medium text-slate-600">Monitor levels</p>
+                  <p className="text-sm text-slate-500">Continue routine care</p>
                 </motion.div>
-                <span>{translateSync('Light')}</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <motion.p variants={valueVariants} className="text-5xl font-extrabold">
-                {sensorData.light} lux
-              </motion.p>
-              <p className="text-lg opacity-80 mt-2">Ideal: 5000-10000 lux</p>
-              <div className={`h-2 w-full rounded-full mt-4 ${getStatusColor(getSensorStatus('light', sensorData.light))}`} />
+              </div>
             </CardContent>
           </Card>
         </motion.div>
-      </motion.div>
+      </div>
     );
   };
 
@@ -298,44 +433,6 @@ const CropMonitor = () => {
           {renderContent()}
         </motion.div>
 
-        {/* Notifications Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.8, ease: "easeOut" }}
-          className="mt-12"
-        >
-          <Card className="bg-white shadow-2xl rounded-3xl p-6 border border-gray-100 transform hover:scale-[1.005] transition-transform duration-300">
-            <CardHeader className="pb-4 border-b border-gray-100 mb-4">
-              <CardTitle className="text-3xl font-bold text-gray-800 flex items-center">
-                <Waves className="h-8 w-8 mr-3 text-blue-600 animate-wave" /> {translateSync('Recent Alerts & Notifications')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {notifications.length > 0 ? (
-                <ul className="space-y-4">
-                  {notifications.map((notification, index) => (
-                    <motion.li
-                      key={index}
-                      initial={{ opacity: 0, x: -30 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.08, type: "spring", stiffness: 100 }}
-                      className="flex items-center text-gray-700 bg-yellow-50 p-4 rounded-xl border border-yellow-200 shadow-sm"
-                    >
-                      <AlertCircle className="h-6 w-6 mr-3 text-yellow-600 flex-shrink-0 animate-bounce-slow" />
-                      <p className="text-lg font-medium">{notification}</p>
-                    </motion.li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-muted-foreground text-center py-8 text-lg font-medium">
-                  <CheckCircle className="h-10 w-10 text-green-500 mx-auto mb-3" />
-                  {translateSync('All systems nominal. No recent notifications.')}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
       </div>
     </Layout>
   );
