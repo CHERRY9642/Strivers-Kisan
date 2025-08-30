@@ -33,6 +33,14 @@ const LandingPage = () => {
           <Sprout size={90} className="animate-float" />
         </div>
         
+        {/* Animated Farm Images */}
+        <div className="absolute top-1/4 left-1/2 transform -translate-x-1/2 opacity-10 animate-float" style={{ animationDelay: '2s' }}>
+          <img src="/src/assets/farm-background.jpg" alt="" className="w-32 h-32 object-cover rounded-full animate-spin-slow" />
+        </div>
+        <div className="absolute bottom-1/4 right-1/4 opacity-15 animate-bounce-gentle" style={{ animationDelay: '3s' }}>
+          <img src="/src/assets/farmer-avatar.png" alt="" className="w-24 h-24 object-cover rounded-full animate-pulse-soft" />
+        </div>
+        
         {/* Additional floating elements for more dynamic feel */}
         <div className="absolute top-1/3 left-1/4 text-primary/10 animate-float" style={{ animationDelay: '1s' }}>
           <Leaf size={50} className="animate-spin-slow" />
@@ -79,10 +87,10 @@ const LandingPage = () => {
             for modern agriculture. Join thousands of farmers who are revolutionizing their farming practices.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-lg px-8 py-6 shadow-glow transform hover:scale-110 transition-all duration-300 animate-bounce-gentle">
+            <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-lg px-8 py-6 shadow-glow transform hover:scale-105 transition-all duration-700 animate-bounce-gentle">
               <Link to="/signup">Get Started</Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="text-lg px-8 py-6 border-primary/30 hover:border-primary hover:bg-primary/10 transform hover:scale-110 transition-all duration-300">
+            <Button asChild variant="outline" size="lg" className="text-lg px-8 py-6 border-primary/30 hover:border-primary hover:bg-primary/10 transform hover:scale-105 transition-all duration-700">
               <Link to="/login">Login to Dashboard</Link>
             </Button>
           </div>
@@ -174,7 +182,7 @@ const LandingPage = () => {
             Join the agricultural revolution today. Get access to all our premium features 
             and start optimizing your farm operations with cutting-edge technology.
           </p>
-          <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-lg px-8 py-6 shadow-glow transform hover:scale-110 transition-all duration-300 animate-pulse-soft">
+          <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-lg px-8 py-6 shadow-glow transform hover:scale-105 transition-all duration-700 animate-pulse-soft">
             <Link to="/signup">Start Your Journey</Link>
           </Button>
         </div>

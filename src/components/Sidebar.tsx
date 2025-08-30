@@ -27,7 +27,7 @@ interface SidebarProps {
 const menuItems = [
   {
     title: 'Dashboard',
-    url: '/',
+    url: '/dashboard',
     icon: Home,
     description: 'Overview'
   },
@@ -87,12 +87,6 @@ const bottomMenuItems = [
     url: '/settings',
     icon: Settings,
     description: 'App preferences'
-  },
-  {
-    title: 'Login',
-    url: '/login',
-    icon: LogIn,
-    description: 'Sign in to account'
   }
 ];
 
