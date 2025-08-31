@@ -306,7 +306,7 @@ const LandingPage = () => {
               whileTap={{ scale: 0.95 }}
             >
               <Button asChild size="lg" className="bg-white text-green-600 hover:bg-white/90 text-xl px-10 py-6 rounded-full font-semibold shadow-xl">
-                <Link to="/dashboard">Get Started</Link>
+                <Link to="/signup">Get Started</Link>
               </Button>
             </motion.div>
             <motion.div

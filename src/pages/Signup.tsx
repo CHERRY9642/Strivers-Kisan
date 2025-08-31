@@ -330,7 +330,7 @@ const Signup = () => {
                   </div>
 
                   <div className="flex justify-end">
-                    <Button type="button" onClick={nextStep} className="bg-gradient-to-r from-farm-primary to-farm-accent">
+                    <Button type="button" onClick={nextStep} className="bg-gradient-to-r from-secondary to-primary hover:from-secondary/90 hover:to-primary/90 text-primary-foreground">
                       {translateSync("Next")} <ChevronRight className="w-4 h-4 ml-2" />
                     </Button>
                   </div>
@@ -411,7 +411,7 @@ const Signup = () => {
                     </Button>
                     <Button 
                       type="submit" 
-                      className="bg-gradient-to-r from-farm-primary to-farm-accent"
+                      className="bg-gradient-to-r from-accent to-secondary hover:from-accent/90 hover:to-secondary/90 text-secondary-foreground"
                       disabled={form.formState.isSubmitting || !selectedPlan}
                     >
                       {form.formState.isSubmitting 
