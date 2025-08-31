@@ -296,33 +296,59 @@ const LandingPage = () => {
           </motion.div>
           
           <motion.div 
-            className="flex flex-col sm:flex-row gap-6 justify-center items-center"
-            initial={{ opacity: 0, y: 30 }}
+            className="flex flex-col sm:flex-row gap-8 justify-center items-center"
+            initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 1.1 }}
+            transition={{ duration: 1, delay: 1.1 }}
           >
+            {/* Get Started Button - Most prominent */}
             <motion.div
-              whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(255,255,255,0.3)" }}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 1.3, type: "spring", bounce: 0.4 }}
+              whileHover={{ 
+                scale: 1.08, 
+                boxShadow: "0 25px 50px hsl(var(--farm-sun) / 0.4)",
+                transition: { duration: 0.3 }
+              }}
               whileTap={{ scale: 0.95 }}
             >
-              <Button asChild size="lg" className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground text-xl px-10 py-6 rounded-full font-semibold shadow-xl">
-                <Link to="/signup">Get Started</Link>
+              <Button asChild size="lg" className="bg-gradient-to-r from-[hsl(var(--farm-leaf))] to-[hsl(var(--farm-sun))] hover:from-[hsl(var(--farm-leaf))]/90 hover:to-[hsl(var(--farm-sun))]/90 text-white text-xl px-12 py-6 rounded-full font-bold shadow-2xl border-2 border-white/20 backdrop-blur-sm transition-all duration-500">
+                <Link to="/signup">🌾 Get Started</Link>
               </Button>
             </motion.div>
+
+            {/* Login Button */}
             <motion.div
-              whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(255,255,255,0.2)" }}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 1.5, type: "spring", bounce: 0.3 }}
+              whileHover={{ 
+                scale: 1.06, 
+                boxShadow: "0 20px 40px hsl(var(--farm-sky) / 0.3)",
+                transition: { duration: 0.3 }
+              }}
               whileTap={{ scale: 0.95 }}
             >
-              <Button asChild variant="outline" size="lg" className="bg-gradient-to-r from-secondary to-muted hover:from-secondary/90 hover:to-muted/90 text-secondary-foreground text-xl px-10 py-6 rounded-full border-2 font-semibold">
-                <Link to="/login">Login</Link>
+              <Button asChild size="lg" className="bg-gradient-to-r from-[hsl(var(--farm-sky))] to-[hsl(var(--primary))] hover:from-[hsl(var(--farm-sky))]/90 hover:to-[hsl(var(--primary))]/90 text-white text-xl px-10 py-6 rounded-full font-semibold shadow-xl border-2 border-white/30 backdrop-blur-sm transition-all duration-500">
+                <Link to="/login">🔑 Login</Link>
               </Button>
             </motion.div>
+
+            {/* Sign Up Button */}
             <motion.div
-              whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(255,255,255,0.2)" }}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 1.7, type: "spring", bounce: 0.2 }}
+              whileHover={{ 
+                scale: 1.06, 
+                boxShadow: "0 20px 40px hsl(var(--farm-soil) / 0.3)",
+                transition: { duration: 0.3 }
+              }}
               whileTap={{ scale: 0.95 }}
             >
-              <Button asChild variant="outline" size="lg" className="text-xl px-10 py-6 rounded-full border-2 border-white text-white hover:bg-white/20 backdrop-blur-sm font-semibold">
-                <Link to="/signup">Sign Up</Link>
+              <Button asChild size="lg" className="bg-gradient-to-r from-[hsl(var(--farm-soil))] to-[hsl(var(--secondary))] hover:from-[hsl(var(--farm-soil))]/90 hover:to-[hsl(var(--secondary))]/90 text-white text-xl px-10 py-6 rounded-full font-semibold shadow-xl border-2 border-white/25 backdrop-blur-sm transition-all duration-500">
+                <Link to="/signup">📝 Sign Up</Link>
               </Button>
             </motion.div>
           </motion.div>
