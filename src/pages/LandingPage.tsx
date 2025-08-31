@@ -305,7 +305,7 @@ const LandingPage = () => {
               whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(255,255,255,0.3)" }}
               whileTap={{ scale: 0.95 }}
             >
-              <Button asChild size="lg" className="bg-white text-green-600 hover:bg-white/90 text-xl px-10 py-6 rounded-full font-semibold shadow-xl">
+              <Button asChild size="lg" className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground text-xl px-10 py-6 rounded-full font-semibold shadow-xl">
                 <Link to="/signup">Get Started</Link>
               </Button>
             </motion.div>
@@ -313,7 +313,7 @@ const LandingPage = () => {
               whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(255,255,255,0.2)" }}
               whileTap={{ scale: 0.95 }}
             >
-              <Button asChild variant="outline" size="lg" className="text-xl px-10 py-6 rounded-full border-2 border-white text-white hover:bg-white/20 backdrop-blur-sm font-semibold">
+              <Button asChild variant="outline" size="lg" className="bg-gradient-to-r from-secondary to-muted hover:from-secondary/90 hover:to-muted/90 text-secondary-foreground text-xl px-10 py-6 rounded-full border-2 font-semibold">
                 <Link to="/login">Login</Link>
               </Button>
             </motion.div>
