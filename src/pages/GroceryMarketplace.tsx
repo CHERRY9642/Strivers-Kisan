@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { 
   ShoppingCart,
@@ -23,11 +26,16 @@ import {
   List,
   Heart,
   MessageCircle,
-  XCircle
+  XCircle,
+  Eye
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
+import { ProductDetailModal } from '@/components/ProductDetailModal';
+import { ImageUpload } from '@/components/ImageUpload';
+import { useSupabase, type EnhancedProduct } from '@/hooks/useSupabase';
 
+// Legacy Product interface for backward compatibility
 interface Product {
   id: string;
   name: string;
@@ -45,24 +53,23 @@ interface Product {
   isOrganic: boolean;
 }
 
-interface CartItem extends Product {
+interface CartItem extends EnhancedProduct {
   cartQuantity: number;
 }
 
 const GroceryMarketplace = () => {
   const { translateSync } = useLanguage();
   const { toast } = useToast();
+  const { createProduct, loading } = useSupabase();
+  
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [showCart, setShowCart] = useState(false);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [selectedProductForFeedback, setSelectedProductForFeedback] = useState<Product | null>(null);
+  const [showProductDetail, setShowProductDetail] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<EnhancedProduct | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [userRating, setUserRating] = useState(0);
-  const [userFeedback, setUserFeedback] = useState('');
-  const [hoveredStar, setHoveredStar] = useState(0);
   const [newProduct, setNewProduct] = useState({
     name: '',
     price: '',
@@ -70,11 +77,14 @@ const GroceryMarketplace = () => {
     quantity: '',
     description: '',
     category: 'vegetables',
-    isOrganic: false
+    isOrganic: false,
+    location: '',
+    seller: ''
   });
+  const [productImages, setProductImages] = useState<File[]>([]);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
-  const [products, setProducts] = useState<Product[]>([
+  const [products, setProducts] = useState<EnhancedProduct[]>([
     {
       id: '1',
       name: 'Fresh Tomatoes',
@@ -84,12 +94,24 @@ const GroceryMarketplace = () => {
       seller: 'Ramesh Kumar',
       location: 'Bangalore, Karnataka',
       rating: 4.5,
-      image: '🍅',
+      images: [{ id: 'tomato-1', url: '🍅', alt: 'Fresh Tomatoes' }],
       description: 'Farm fresh red tomatoes, perfect for cooking and salads. Harvested yesterday.',
       category: 'vegetables',
       freshness: 'Very Fresh',
       postedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      isOrganic: true
+      isOrganic: true,
+      likesCount: 12,
+      savesCount: 8,
+      feedback: [
+        {
+          id: 'f1',
+          userId: 'u1',
+          userName: 'Priya Sharma',
+          rating: 5,
+          comment: 'Excellent quality tomatoes! Very fresh and tasty.',
+          createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000)
+        }
+      ]
     },
     {
       id: '2',
@@ -100,12 +122,15 @@ const GroceryMarketplace = () => {
       seller: 'Sunita Devi',
       location: 'Mysore, Karnataka',
       rating: 4.8,
-      image: '🧅',
+      images: [{ id: 'onion-1', url: '🧅', alt: 'Organic Onions' }],
       description: 'Certified organic onions with no pesticides. Great for daily cooking.',
       category: 'vegetables',
       freshness: 'Fresh',
       postedAt: new Date(Date.now() - 5 * 60 * 60 * 1000),
-      isOrganic: true
+      isOrganic: true,
+      likesCount: 18,
+      savesCount: 14,
+      feedback: []
     },
     {
       id: '3',
@@ -116,12 +141,24 @@ const GroceryMarketplace = () => {
       seller: 'Krishnan Farms',
       location: 'Hassan, Karnataka',
       rating: 4.7,
-      image: '🌾',
+      images: [{ id: 'rice-1', url: '🌾', alt: 'Basmati Rice' }],
       description: 'Premium quality basmati rice with authentic aroma and taste.',
       category: 'grains',
       freshness: 'Excellent',
       postedAt: new Date(Date.now() - 8 * 60 * 60 * 1000),
-      isOrganic: false
+      isOrganic: false,
+      likesCount: 25,
+      savesCount: 20,
+      feedback: [
+        {
+          id: 'f2',
+          userId: 'u2',
+          userName: 'Raj Kumar',
+          rating: 4,
+          comment: 'Good quality rice, worth the price.',
+          createdAt: new Date(Date.now() - 48 * 60 * 60 * 1000)
+        }
+      ]
     },
     {
       id: '4',
@@ -132,12 +169,15 @@ const GroceryMarketplace = () => {
       seller: 'Mango Valley Farm',
       location: 'Belgaum, Karnataka',
       rating: 4.9,
-      image: '🥭',
+      images: [{ id: 'mango-1', url: '🥭', alt: 'Fresh Mangoes' }],
       description: 'Sweet Alphonso mangoes directly from our orchard. Limited stock available.',
       category: 'fruits',
       freshness: 'Very Fresh',
       postedAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
-      isOrganic: true
+      isOrganic: true,
+      likesCount: 32,
+      savesCount: 28,
+      feedback: []
     },
     {
       id: '5',
@@ -148,12 +188,15 @@ const GroceryMarketplace = () => {
       seller: 'Green Leaf Farm',
       location: 'Mandya, Karnataka',
       rating: 4.3,
-      image: '🥬',
+      images: [{ id: 'spinach-1', url: '🥬', alt: 'Fresh Spinach' }],
       description: 'Tender and nutritious spinach leaves, perfect for healthy meals.',
       category: 'vegetables',
       freshness: 'Very Fresh',
       postedAt: new Date(Date.now() - 3 * 60 * 60 * 1000),
-      isOrganic: true
+      isOrganic: true,
+      likesCount: 15,
+      savesCount: 11,
+      feedback: []
     },
     {
       id: '6',
@@ -164,12 +207,15 @@ const GroceryMarketplace = () => {
       seller: 'Heritage Mills',
       location: 'Tumkur, Karnataka',
       rating: 4.6,
-      image: '🌾',
+      images: [{ id: 'flour-1', url: '🌾', alt: 'Wheat Flour' }],
       description: 'Stone ground whole wheat flour, rich in fiber and nutrients.',
       category: 'grains',
       freshness: 'Fresh',
       postedAt: new Date(Date.now() - 12 * 60 * 60 * 1000),
-      isOrganic: false
+      isOrganic: false,
+      likesCount: 9,
+      savesCount: 6,
+      feedback: []
     }
   ]);
 
@@ -188,36 +234,48 @@ const GroceryMarketplace = () => {
     return matchesSearch && matchesCategory;
   });
 
-  const handleAddProduct = () => {
-    // In a real app, this would submit to a backend
-    console.log('Adding new product:', newProduct);
-    const productToAdd: Product = {
-      id: String(products.length + 1), // Simple ID generation
+  const handleAddProduct = async () => {
+    if (!newProduct.name || !newProduct.price || !newProduct.quantity) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const productData = {
       name: newProduct.name,
       price: parseFloat(newProduct.price),
       unit: newProduct.unit,
       quantity: parseInt(newProduct.quantity),
-      seller: 'Your Farm', // Placeholder
-      location: 'Your Location', // Placeholder
-      rating: 4.0, // Default rating
-      image: '📦', // Default emoji image
+      seller: newProduct.seller || 'Your Farm',
+      location: newProduct.location || 'Your Location',
+      rating: 4.0,
       description: newProduct.description,
       category: newProduct.category,
-      freshness: 'Fresh', // Default freshness
-      postedAt: new Date(),
+      freshness: 'Fresh',
       isOrganic: newProduct.isOrganic,
     };
-    setProducts(prevProducts => [...prevProducts, productToAdd]);
-    setShowAddProduct(false);
-    setNewProduct({
-      name: '',
-      price: '',
-      unit: 'kg',
-      quantity: '',
-      description: '',
-      category: 'vegetables',
-      isOrganic: false
-    });
+
+    const createdProduct = await createProduct(productData, productImages);
+    
+    if (createdProduct) {
+      setProducts(prevProducts => [...prevProducts, createdProduct]);
+      setShowAddProduct(false);
+      setNewProduct({
+        name: '',
+        price: '',
+        unit: 'kg',
+        quantity: '',
+        description: '',
+        category: 'vegetables',
+        isOrganic: false,
+        location: '',
+        seller: ''
+      });
+      setProductImages([]);
+    }
   };
 
   const formatTimeAgo = (date: Date) => {
@@ -230,7 +288,7 @@ const GroceryMarketplace = () => {
     return `${Math.floor(diffInHours / 24)} days ago`;
   };
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: EnhancedProduct) => {
     setCartItems(prevItems => {
       const existingItem = prevItems.find(item => item.id === product.id);
       if (existingItem) {
@@ -281,47 +339,11 @@ const GroceryMarketplace = () => {
     });
   };
 
-  const openFeedbackModal = (product: Product) => {
-    setSelectedProductForFeedback(product);
-    setUserRating(0);
-    setUserFeedback('');
-    setShowFeedback(true);
+  const openProductDetail = (product: EnhancedProduct) => {
+    setSelectedProduct(product);
+    setShowProductDetail(true);
   };
 
-  const submitFeedback = () => {
-    if (!selectedProductForFeedback || userRating === 0) return;
-    
-    toast({
-      title: "Feedback submitted",
-      description: `Thank you for rating ${selectedProductForFeedback.name}!`,
-    });
-    
-    setShowFeedback(false);
-    setSelectedProductForFeedback(null);
-    setUserRating(0);
-    setUserFeedback('');
-  };
-
-  const AnimatedStar = ({ index, filled, onHover, onClick }: {
-    index: number;
-    filled: boolean;
-    onHover: (index: number) => void;
-    onClick: (index: number) => void;
-  }) => (
-    <motion.div
-      whileHover={{ scale: 1.2 }}
-      whileTap={{ scale: 0.9 }}
-      onHoverStart={() => onHover(index)}
-      onClick={() => onClick(index)}
-      className="cursor-pointer"
-    >
-      <Star
-        className={`h-6 w-6 transition-colors ${
-          filled ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground'
-        }`}
-      />
-    </motion.div>
-  );
 
   return (
     <Layout>
@@ -389,7 +411,7 @@ const GroceryMarketplace = () => {
                       {cartItems.map(item => (
                         <div key={item.id} className="flex items-center justify-between">
                           <div className="flex items-center space-x-2">
-                            <span className="text-2xl">{item.image}</span>
+                            <span className="text-2xl">{item.images[0]?.url || '📦'}</span>
                             <div>
                               <p className="font-medium">{item.name}</p>
                               <p className="text-sm text-muted-foreground">₹{item.price}/{item.unit}</p>
@@ -478,7 +500,7 @@ const GroceryMarketplace = () => {
                   {viewMode === 'grid' ? (
                     <>
                       <CardHeader className="text-center pb-2">
-                        <div className="text-6xl mb-2">{product.image}</div>
+                        <div className="text-6xl mb-2">{product.images[0]?.url || '📦'}</div>
                         <CardTitle className="text-lg">{product.name}</CardTitle>
                         <div className="flex justify-center space-x-2">
                           {product.isOrganic && (
@@ -536,9 +558,9 @@ const GroceryMarketplace = () => {
                           <Button 
                             variant="outline" 
                             size="sm"
-                            onClick={() => openFeedbackModal(product)}
+                            onClick={() => openProductDetail(product)}
                           >
-                            <MessageCircle className="h-4 w-4" />
+                            <Eye className="h-4 w-4" />
                           </Button>
                           <motion.div
                             whileTap={{ scale: 0.9 }}
@@ -571,9 +593,9 @@ const GroceryMarketplace = () => {
                   ) : (
                     // List View
                     <div className="flex w-full">
-                      <div className="w-20 h-20 flex items-center justify-center text-4xl">
-                        {product.image}
-                      </div>
+                       <div className="w-20 h-20 flex items-center justify-center text-4xl">
+                         {product.images[0]?.url || '📦'}
+                       </div>
                       <div className="flex-1 p-4">
                         <div className="flex justify-between items-start">
                           <div>
@@ -606,13 +628,13 @@ const GroceryMarketplace = () => {
                                 <ShoppingCart className="h-4 w-4 mr-1" />
                                 Buy
                               </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => openFeedbackModal(product)}
-                              >
-                                <MessageCircle className="h-4 w-4" />
-                              </Button>
+                               <Button 
+                                 variant="outline" 
+                                 size="sm"
+                                 onClick={() => openProductDetail(product)}
+                               >
+                                 <Eye className="h-4 w-4" />
+                               </Button>
                               <motion.div whileTap={{ scale: 0.9 }}>
                                 <Button 
                                   variant={favorites.includes(product.id) ? "default" : "outline"} 
@@ -648,78 +670,13 @@ const GroceryMarketplace = () => {
           </AnimatePresence>
         </motion.div>
 
-        {/* Feedback Modal */}
-        <AnimatePresence>
-          {showFeedback && selectedProductForFeedback && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-              onClick={() => setShowFeedback(false)}
-            >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-md"
-              >
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Rate & Review</CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedProductForFeedback.name} by {selectedProductForFeedback.seller}
-                    </p>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Your Rating</label>
-                      <div 
-                        className="flex space-x-1"
-                        onMouseLeave={() => setHoveredStar(0)}
-                      >
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <AnimatedStar
-                            key={star}
-                            index={star}
-                            filled={star <= (hoveredStar || userRating)}
-                            onHover={setHoveredStar}
-                            onClick={setUserRating}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="text-sm font-medium">Your Feedback (Optional)</label>
-                      <Textarea
-                        value={userFeedback}
-                        onChange={(e) => setUserFeedback(e.target.value)}
-                        placeholder="Share your experience with this product..."
-                        rows={3}
-                        className="mt-1"
-                      />
-                    </div>
-
-                    <div className="flex space-x-2 pt-4">
-                      <Button 
-                        onClick={submitFeedback} 
-                        className="flex-1"
-                        disabled={userRating === 0}
-                      >
-                        Submit Review
-                      </Button>
-                      <Button variant="outline" onClick={() => setShowFeedback(false)}>
-                        Cancel
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Product Detail Modal */}
+        <ProductDetailModal
+          product={selectedProduct}
+          isOpen={showProductDetail}
+          onClose={() => setShowProductDetail(false)}
+          onAddToCart={addToCart}
+        />
 
         {/* Add Product Modal */}
         <AnimatePresence>
@@ -736,95 +693,146 @@ const GroceryMarketplace = () => {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-md"
+                className="w-full max-w-2xl max-h-[90vh] overflow-y-auto"
               >
                 <Card>
                   <CardHeader>
                     <CardTitle>Add New Product</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-6">
+                    {/* Product Images */}
                     <div>
-                      <label className="text-sm font-medium">Product Name</label>
-                      <Input
-                        value={newProduct.name}
-                        onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
-                        placeholder="e.g., Fresh Tomatoes"
+                      <Label className="text-sm font-medium mb-3 block">Product Images</Label>
+                      <ImageUpload 
+                        onImagesChange={setProductImages}
+                        maxImages={5}
                       />
                     </div>
-                    
-                    <div className="grid grid-cols-2 gap-3">
+
+                    {/* Basic Info */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="text-sm font-medium">Price</label>
+                        <Label className="text-sm font-medium">Product Name *</Label>
+                        <Input
+                          value={newProduct.name}
+                          onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
+                          placeholder="e.g., Fresh Tomatoes"
+                          className="mt-1"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label className="text-sm font-medium">Category *</Label>
+                        <Select 
+                          value={newProduct.category} 
+                          onValueChange={(value) => setNewProduct({...newProduct, category: value})}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="vegetables">Vegetables</SelectItem>
+                            <SelectItem value="fruits">Fruits</SelectItem>
+                            <SelectItem value="grains">Grains</SelectItem>
+                            <SelectItem value="dairy">Dairy</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Price and Quantity */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium">Price *</Label>
                         <Input
                           type="number"
                           value={newProduct.price}
                           onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
                           placeholder="45"
+                          className="mt-1"
                         />
                       </div>
                       <div>
-                        <label className="text-sm font-medium">Unit</label>
-                        <select
-                          value={newProduct.unit}
-                          onChange={(e) => setNewProduct({...newProduct, unit: e.target.value})}
-                          className="w-full p-2 border rounded-md"
+                        <Label className="text-sm font-medium">Unit *</Label>
+                        <Select 
+                          value={newProduct.unit} 
+                          onValueChange={(value) => setNewProduct({...newProduct, unit: value})}
                         >
-                          <option value="kg">kg</option>
-                          <option value="gram">gram</option>
-                          <option value="piece">piece</option>
-                          <option value="dozen">dozen</option>
-                        </select>
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Select unit" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="kg">kg</SelectItem>
+                            <SelectItem value="gram">gram</SelectItem>
+                            <SelectItem value="piece">piece</SelectItem>
+                            <SelectItem value="dozen">dozen</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Quantity Available *</Label>
+                        <Input
+                          type="number"
+                          value={newProduct.quantity}
+                          onChange={(e) => setNewProduct({...newProduct, quantity: e.target.value})}
+                          placeholder="50"
+                          className="mt-1"
+                        />
                       </div>
                     </div>
 
-                    <div>
-                      <label className="text-sm font-medium">Quantity Available</label>
-                      <Input
-                        type="number"
-                        value={newProduct.quantity}
-                        onChange={(e) => setNewProduct({...newProduct, quantity: e.target.value})}
-                        placeholder="50"
-                      />
+                    {/* Location and Seller */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium">Seller Name</Label>
+                        <Input
+                          value={newProduct.seller}
+                          onChange={(e) => setNewProduct({...newProduct, seller: e.target.value})}
+                          placeholder="Your Farm Name"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Location</Label>
+                        <Input
+                          value={newProduct.location}
+                          onChange={(e) => setNewProduct({...newProduct, location: e.target.value})}
+                          placeholder="City, State"
+                          className="mt-1"
+                        />
+                      </div>
                     </div>
 
+                    {/* Description */}
                     <div>
-                      <label className="text-sm font-medium">Category</label>
-                      <select
-                        value={newProduct.category}
-                        onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
-                        className="w-full p-2 border rounded-md"
-                      >
-                        <option value="vegetables">Vegetables</option>
-                        <option value="fruits">Fruits</option>
-                        <option value="grains">Grains</option>
-                        <option value="dairy">Dairy</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium">Description</label>
+                      <Label className="text-sm font-medium">Description</Label>
                       <Textarea
                         value={newProduct.description}
                         onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
-                        placeholder="Describe your product..."
+                        placeholder="Describe your product, its quality, freshness, etc..."
                         rows={3}
+                        className="mt-1"
                       />
                     </div>
 
+                    {/* Organic checkbox */}
                     <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
+                      <Switch
                         id="organic"
                         checked={newProduct.isOrganic}
-                        onChange={(e) => setNewProduct({...newProduct, isOrganic: e.target.checked})}
+                        onCheckedChange={(checked) => setNewProduct({...newProduct, isOrganic: checked})}
                       />
-                      <label htmlFor="organic" className="text-sm">This is an organic product</label>
+                      <Label htmlFor="organic" className="text-sm">This is an organic product</Label>
                     </div>
 
                     <div className="flex space-x-2 pt-4">
-                      <Button onClick={handleAddProduct} className="flex-1">
+                      <Button 
+                        onClick={handleAddProduct} 
+                        className="flex-1"
+                        disabled={loading}
+                      >
                         <Package className="h-4 w-4 mr-2" />
-                        List Product
+                        {loading ? 'Creating...' : 'List Product'}
                       </Button>
                       <Button variant="outline" onClick={() => setShowAddProduct(false)}>
                         Cancel
