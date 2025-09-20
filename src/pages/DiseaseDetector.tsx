@@ -222,23 +222,72 @@ const DiseaseDetector: React.FC = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto py-8 space-y-6">
+      <div className="container mx-auto py-6 space-y-4">
+        {/* Header Section */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center space-y-3 mb-6"
+        >
+          <motion.h1 
+            className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent"
+            animate={{ 
+              backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+            }}
+            transition={{ duration: 3, repeat: Infinity }}
+          >
+            Crop Disease Detection
+          </motion.h1>
+          <motion.p 
+            className="text-base text-muted-foreground max-w-2xl mx-auto px-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            Identify and diagnose crop diseases using advanced AI technology. Upload images of your crops to get instant analysis and treatment recommendations.
+          </motion.p>
+        </motion.div>
+        {/* Header Section */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center space-y-4 mb-8"
+        >
+          <motion.h1 
+            className="text-4xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent"
+            animate={{ 
+              backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+            }}
+            transition={{ duration: 3, repeat: Infinity }}
+          >
+            Crop Disease Detection
+          </motion.h1>
+          <motion.p 
+            className="text-lg text-muted-foreground max-w-2xl mx-auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            Identify and diagnose crop diseases using advanced AI technology. Upload images of your crops to get instant analysis and treatment recommendations.
+          </motion.p>
+        </motion.div>
+
         {/* Mode Selector */}
         <Card>
-          <CardContent className="p-6">
-            <div className="flex justify-center space-x-2">
+          <CardContent className="p-4">
+            <div className="flex justify-center space-x-1">
               {Object.entries(modeConfig).map(([key, config]) => (
                 <motion.button
                   key={key}
-                  className={`relative px-6 py-3 rounded-lg font-medium transition-all ${
+                  className={`relative px-4 py-2 rounded-lg font-medium transition-all text-sm ${
                     mode === key ? 'text-white' : 'text-muted-foreground hover:text-foreground'
                   }`}
                   onClick={() => {
                     setMode(key as DetectorMode);
                     resetToNormal();
                   }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   {mode === key && (
                     <motion.div
@@ -273,23 +322,23 @@ const DiseaseDetector: React.FC = () => {
                   <CardTitle className="text-center">Select the crop you are having issues with</CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                     {crops.map((crop) => (
                       <motion.button
                         key={crop.id}
-                        className="p-4 border rounded-lg hover:border-primary transition-colors"
+                        className="p-3 border rounded-lg hover:border-primary transition-colors"
                         onClick={() => setSelectedCrop(crop)}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
-                        <div className="aspect-square rounded-lg overflow-hidden mb-2">
+                        <div className="aspect-square rounded-lg overflow-hidden mb-2 w-16 h-16 sm:w-20 sm:h-20 mx-auto">
                           <img
                             src={crop.image}
                             alt={crop.name}
                             className="w-full h-full object-cover"
                           />
                         </div>
-                        <h3 className="font-medium text-center">{crop.name}</h3>
+                        <h3 className="font-medium text-center text-sm">{crop.name}</h3>
                       </motion.button>
                     ))}
                   </div>
@@ -305,7 +354,7 @@ const DiseaseDetector: React.FC = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="grid lg:grid-cols-2 gap-6"
+              className="grid lg:grid-cols-2 gap-4 sm:gap-6"
             >
               {/* Left Side - Upload Image */}
               <Card>
@@ -431,7 +480,7 @@ const DiseaseDetector: React.FC = () => {
                             <img
                               src={disease.image}
                               alt={disease.name}
-                              className="w-16 h-16 rounded object-cover"
+                              className="w-12 h-12 rounded object-cover"
                             />
                             <div>
                               <h4 className="font-medium text-sm">{disease.name}</h4>
@@ -470,7 +519,7 @@ const DiseaseDetector: React.FC = () => {
               exit={{ opacity: 0, y: -20 }}
               className="grid lg:grid-cols-2 gap-6"
             >
-              <Card>
+              <Card className="border-secondary/20 bg-secondary/5">
                 <CardHeader>
                   <CardTitle className="text-secondary">Advanced Crop Analysis</CardTitle>
                 </CardHeader>
@@ -481,23 +530,72 @@ const DiseaseDetector: React.FC = () => {
                   
                   <div
                     {...getRootProps()}
-                    className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                      isDragActive ? 'border-secondary bg-secondary/5' : 'border-border hover:border-secondary/50'
+                    className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+                      isDragActive ? 'border-secondary bg-secondary/5' : 'border-secondary/30 hover:border-secondary/50'
                     }`}
                   >
                     <input {...getInputProps()} />
-                    <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                    <p className="text-lg font-medium">Drop crop images here or click to browse</p>
+                    <Upload className="mx-auto h-10 w-10 text-secondary mb-3" />
+                    <p className="text-lg font-medium text-secondary">Drop crop images here or click to browse</p>
                     <p className="text-sm text-muted-foreground mt-2">Advanced analysis with detailed reports</p>
                   </div>
 
-                  {previewUrl && (
+                  <div className="text-center text-sm text-muted-foreground">
+                    Capture from camera:
+                  </div>
+
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      onClick={handleCameraOpen}
+                      className="flex-1 border-secondary/30 text-secondary hover:bg-secondary/10"
+                    >
+                      <CameraIcon className="w-4 h-4 mr-2" />
+                      Open Camera
+                    </Button>
+                    {isCameraOpen && (
+                      <Button
+                        onClick={handleCapturePhoto}
+                        className="flex-1 bg-secondary hover:bg-secondary/90"
+                      >
+                        📸 Capture
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="text-sm text-muted-foreground">
+                    Paste image here:
+                  </div>
+
+                  <div
+                    className="border-2 border-dashed border-secondary/30 rounded-lg p-6 text-center text-muted-foreground hover:border-secondary/50 transition-colors"
+                    onPaste={handlePasteImage}
+                    tabIndex={0}
+                  >
+                    Paste an image directly into this box...
+                  </div>
+
+                  {isCameraOpen && (
                     <div className="relative">
-                      <img src={previewUrl} alt="Preview" className="w-full rounded-lg" />
+                      <video ref={videoRef} autoPlay playsInline className="w-full rounded-lg max-h-64" />
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="absolute top-2 right-2"
+                        className="absolute top-2 right-2 bg-background/80"
+                        onClick={handleCameraClose}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+
+                  {previewUrl && (
+                    <div className="relative">
+                      <img src={previewUrl} alt="Preview" className="w-full rounded-lg max-h-64 object-cover" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-2 right-2 bg-background/80"
                         onClick={handleRemoveImage}
                       >
                         <X className="w-4 h-4" />
@@ -507,23 +605,22 @@ const DiseaseDetector: React.FC = () => {
 
                   <Button
                     onClick={handleAnalyze}
-                    className="w-full"
+                    className="w-full bg-secondary hover:bg-secondary/90"
                     disabled={!selectedImage || isAnalyzing}
-                    variant="secondary"
                   >
                     {isAnalyzing ? 'Analyzing...' : 'Run Advanced Analysis'}
                   </Button>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-secondary/20 bg-secondary/5">
                 <CardHeader>
                   <CardTitle className="text-secondary">Advanced Results</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {analysisResult ? (
                     <div className="space-y-4">
-                      <Badge variant="secondary">Advanced Analysis Complete</Badge>
+                      <Badge className="bg-secondary hover:bg-secondary/90">Advanced Analysis Complete</Badge>
                       <p className="text-sm">{analysisResult}</p>
                     </div>
                   ) : (
