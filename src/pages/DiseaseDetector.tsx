@@ -1,20 +1,123 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useDropzone } from 'react-dropzone';
 import { Layout } from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Image as ImageIcon, UploadCloud, XCircle, Camera as CameraIcon } from 'lucide-react';
+import { Badge } from '../components/ui/badge';
+import { 
+  Image as ImageIcon, 
+  Upload, 
+  Camera as CameraIcon, 
+  X, 
+  ChevronLeft,
+  Microscope,
+  Scan,
+  Brain
+} from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+
+// Import crop images
+import riceImage from '@/assets/crops/rice.jpg';
+import cottonImage from '@/assets/crops/cotton.jpg';
+import hotpepperImage from '@/assets/crops/hotpepper.jpg';
+import cornImage from '@/assets/crops/corn.jpg';
+import tomatoImage from '@/assets/crops/tomato.jpg';
+import onionImage from '@/assets/crops/onion.jpg';
+import potatoImage from '@/assets/crops/potato.jpg';
+import grapesImage from '@/assets/crops/grapes.jpg';
+
+// Import disease reference images
+import riceBlightImage from '@/assets/diseases/rice-blight.jpg';
+import tomatoBlightImage from '@/assets/diseases/tomato-blight.jpg';
+import cornSpotImage from '@/assets/diseases/corn-spot.jpg';
+import cottonBollwormImage from '@/assets/diseases/cotton-bollworm.jpg';
+
+type DetectorMode = 'normal' | 'advanced' | 'hyperspectral';
+
+interface Crop {
+  id: string;
+  name: string;
+  image: string;
+  diseases: { name: string; image: string; description: string }[];
+}
+
+const crops: Crop[] = [
+  {
+    id: 'rice',
+    name: 'Rice',
+    image: riceImage,
+    diseases: [
+      { name: 'Bacterial Leaf Blight', image: riceBlightImage, description: 'Yellow to brown streaks on leaves' }
+    ]
+  },
+  {
+    id: 'cotton',
+    name: 'Cotton',
+    image: cottonImage,
+    diseases: [
+      { name: 'Bollworm Infestation', image: cottonBollwormImage, description: 'Holes and damage in cotton bolls' }
+    ]
+  },
+  {
+    id: 'hotpepper',
+    name: 'Hot Pepper',
+    image: hotpepperImage,
+    diseases: []
+  },
+  {
+    id: 'corn',
+    name: 'Corn',
+    image: cornImage,
+    diseases: [
+      { name: 'Leaf Spot Disease', image: cornSpotImage, description: 'Circular brown spots on leaves' }
+    ]
+  },
+  {
+    id: 'tomato',
+    name: 'Tomato',
+    image: tomatoImage,
+    diseases: [
+      { name: 'Late Blight', image: tomatoBlightImage, description: 'Dark spots with white fuzzy growth' }
+    ]
+  },
+  {
+    id: 'onion',
+    name: 'Onion',
+    image: onionImage,
+    diseases: []
+  },
+  {
+    id: 'potato',
+    name: 'Potato',
+    image: potatoImage,
+    diseases: []
+  },
+  {
+    id: 'grapes',
+    name: 'Grapes',
+    image: grapesImage,
+    diseases: []
+  }
+];
 
 const DiseaseDetector: React.FC = () => {
   const { translateSync } = useLanguage();
+  const [mode, setMode] = useState<DetectorMode>('normal');
+  const [selectedCrop, setSelectedCrop] = useState<Crop | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isCameraOpen, setIsCameraOpen] = useState<boolean>(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
-  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const modeConfig = {
+    normal: { icon: Brain, label: 'Normal', color: 'bg-primary' },
+    advanced: { icon: Microscope, label: 'Advanced', color: 'bg-secondary' },
+    hyperspectral: { icon: Scan, label: 'Hyperspectral', color: 'bg-accent' }
+  };
 
   const handleCameraOpen = async () => {
     try {
@@ -23,9 +126,8 @@ const DiseaseDetector: React.FC = () => {
         videoRef.current.srcObject = stream;
         setIsCameraOpen(true);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error accessing camera:", error);
-      setCameraError(error.name === 'NotAllowedError' ? 'Camera access denied. Please allow camera permissions in your browser settings.' : 'Could not access camera. Please ensure you have a camera connected.');
       alert("Could not access camera. Please ensure you have a camera and have granted permissions.");
     }
   };
@@ -43,7 +145,7 @@ const DiseaseDetector: React.FC = () => {
             const file = new File([blob], "captured_image.png", { type: "image/png" });
             setSelectedImage(file);
             setPreviewUrl(URL.createObjectURL(file));
-            handleCameraClose(); // Close camera after capturing
+            handleCameraClose();
           }
         }, 'image/png');
       }
@@ -64,16 +166,12 @@ const DiseaseDetector: React.FC = () => {
     if (file && file.type.startsWith('image/')) {
       setSelectedImage(file);
       setPreviewUrl(URL.createObjectURL(file));
-    } else {
-      alert('Please upload an image file (e.g., JPG, PNG, GIF).');
     }
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: {
-      'image/*': ['.jpeg', '.png', '.jpg', '.gif'],
-    },
+    accept: { 'image/*': ['.jpeg', '.png', '.jpg', '.gif'] },
     multiple: false,
   });
 
@@ -82,8 +180,6 @@ const DiseaseDetector: React.FC = () => {
     if (file && file.type.startsWith('image/')) {
       setSelectedImage(file);
       setPreviewUrl(URL.createObjectURL(file));
-    } else {
-      alert('Please upload an image file (e.g., JPG, PNG, GIF).');
     }
   };
 
@@ -92,124 +188,424 @@ const DiseaseDetector: React.FC = () => {
     setPreviewUrl(null);
   };
 
-  const handleSubmit = () => {
-    if (selectedImage) {
-      console.log('Submitting image:', selectedImage.name);
-      // Here you would typically send the image to a backend service
-      // For now, we'll just log it.
-      alert('Image submitted! (Check console for details)');
-    } else {
-      alert('Please select an image first.');
+  const handlePasteImage = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.indexOf('image') !== -1) {
+        const file = item.getAsFile();
+        if (file) {
+          setSelectedImage(file);
+          setPreviewUrl(URL.createObjectURL(file));
+        }
+      }
     }
+  };
+
+  const handleAnalyze = async () => {
+    if (!selectedImage) return;
+    
+    setIsAnalyzing(true);
+    // Simulate analysis
+    setTimeout(() => {
+      setAnalysisResult('Leaf Spot Disease detected with 85% confidence. Recommended treatment: Apply fungicide spray.');
+      setIsAnalyzing(false);
+    }, 3000);
+  };
+
+  const resetToNormal = () => {
+    setSelectedCrop(null);
+    setSelectedImage(null);
+    setPreviewUrl(null);
+    setAnalysisResult(null);
   };
 
   return (
     <Layout>
-      <div className="container mx-auto py-8">
-        <Card className="w-full max-w-2xl mx-auto">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center">{translateSync('Upload Image for Disease Detection')}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div
-              {...getRootProps()}
-              className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors"
-            >
-              <input {...getInputProps()} />
-              {isDragActive ? (
-                <p className="text-primary">{translateSync('Drop the image here ...')}</p>
-              ) : (
-                <div className="flex flex-col items-center space-y-2">
-                  <UploadCloud className="h-12 w-12 text-gray-400" />
-                  <p className="text-gray-600">{translateSync("Drag 'n' drop an image here, or click to select one")}</p>
-                  <p className="text-sm text-gray-500">(JPG, PNG, GIF)</p>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center justify-center space-x-2">
-              <span className="text-gray-500">OR</span>
-            </div>
-
-            <div className="grid w-full max-w-sm items-center gap-1.5 mx-auto">
-              <Label htmlFor="picture" className="sr-only">Picture</Label>
-              <Input
-                id="picture"
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="block w-full text-sm text-gray-500
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-full file:border-0
-                  file:text-sm file:font-semibold
-                  file:bg-primary-foreground file:text-primary
-                  hover:file:bg-primary/90 hover:file:text-white"
-              />
-            </div>
-
-            <div className="flex items-center justify-center space-x-2">
-              <span className="text-gray-500">OR</span>
-            </div>
-
-            <Button
-              onClick={handleCameraOpen}
-              className="w-full py-2 text-lg"
-            >
-              <CameraIcon className="mr-2 h-5 w-5" />
-              {translateSync('Take Photo')}
-            </Button>
-
-            {cameraError && (
-              <p className="text-red-500 text-center text-sm">{cameraError}</p>
-            )}
-
-            {isCameraOpen && (
-              <div className="relative mt-6 p-4 border rounded-lg flex flex-col items-center">
-                <video ref={videoRef} autoPlay playsInline className="w-full max-w-md h-64 object-cover rounded-md"></video>
-                <Button
-                  onClick={handleCapturePhoto}
-                  className="mt-4 w-full py-2 text-lg"
+      <div className="container mx-auto py-8 space-y-6">
+        {/* Mode Selector */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex justify-center space-x-2">
+              {Object.entries(modeConfig).map(([key, config]) => (
+                <motion.button
+                  key={key}
+                  className={`relative px-6 py-3 rounded-lg font-medium transition-all ${
+                    mode === key ? 'text-white' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                  onClick={() => {
+                    setMode(key as DetectorMode);
+                    resetToNormal();
+                  }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  <CameraIcon className="mr-2 h-5 w-5" />
-                  {translateSync('Capture Photo')}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-2 right-2 text-red-500 hover:text-red-700"
-                  onClick={handleCameraClose}
-                >
-                  <XCircle className="h-6 w-6" />
-                </Button>
-              </div>
-            )
-            }
-
-            {previewUrl && (
-              <div className="relative mt-6 p-4 border rounded-lg flex flex-col items-center">
-                <img src={previewUrl} alt="Preview" className="max-w-full h-auto rounded-md max-h-64 object-contain" />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-2 right-2 text-red-500 hover:text-red-700"
-                  onClick={handleRemoveImage}
-                >
-                  <XCircle className="h-6 w-6" />
-                </Button>
-                <p className="mt-2 text-sm text-gray-600">{selectedImage?.name}</p>
-              </div>
-            )}
-
-            <Button
-              onClick={handleSubmit}
-              className="w-full py-2 text-lg"
-              disabled={!selectedImage}
-            >
-              <ImageIcon className="mr-2 h-5 w-5" />
-              {translateSync('Analyze Image')}
-            </Button>
+                  {mode === key && (
+                    <motion.div
+                      className={`absolute inset-0 rounded-lg ${config.color}`}
+                      layoutId="activeMode"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                    />
+                  )}
+                  <div className="relative flex items-center space-x-2">
+                    <config.icon className="w-4 h-4" />
+                    <span>{config.label}</span>
+                  </div>
+                </motion.button>
+              ))}
+            </div>
           </CardContent>
         </Card>
+
+        <AnimatePresence mode="wait">
+          {/* Normal Mode - Crop Selection */}
+          {mode === 'normal' && !selectedCrop && (
+            <motion.div
+              key="crop-selection"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-center">Select the crop you are having issues with</CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {crops.map((crop) => (
+                      <motion.button
+                        key={crop.id}
+                        className="p-4 border rounded-lg hover:border-primary transition-colors"
+                        onClick={() => setSelectedCrop(crop)}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <div className="aspect-square rounded-lg overflow-hidden mb-2">
+                          <img
+                            src={crop.image}
+                            alt={crop.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <h3 className="font-medium text-center">{crop.name}</h3>
+                      </motion.button>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Normal Mode - Analysis Interface */}
+          {mode === 'normal' && selectedCrop && (
+            <motion.div
+              key="normal-analysis"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="grid lg:grid-cols-2 gap-6"
+            >
+              {/* Left Side - Upload Image */}
+              <Card>
+                <CardHeader className="flex flex-row items-center space-y-0 space-x-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setSelectedCrop(null)}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <CardTitle className="text-primary">Upload Image</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="text-sm text-muted-foreground">
+                    Upload from device 📱:
+                  </div>
+                  
+                  <div
+                    {...getRootProps()}
+                    className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+                      isDragActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <input {...getInputProps()} />
+                    <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-sm">Drop images here or click to browse</p>
+                  </div>
+
+                  <div className="text-center text-sm text-muted-foreground">
+                    Capture from camera:
+                  </div>
+
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      onClick={handleCameraOpen}
+                      className="flex-1"
+                    >
+                      <CameraIcon className="w-4 h-4 mr-2" />
+                      Open Camera
+                    </Button>
+                    {isCameraOpen && (
+                      <Button
+                        onClick={handleCapturePhoto}
+                        className="flex-1"
+                      >
+                        📸 Capture
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="text-sm text-muted-foreground">
+                    Paste image here:
+                  </div>
+
+                  <div
+                    className="border-2 border-dashed rounded-lg p-8 text-center text-muted-foreground"
+                    onPaste={handlePasteImage}
+                    tabIndex={0}
+                  >
+                    Paste an image directly into this box...
+                  </div>
+
+                  {isCameraOpen && (
+                    <div className="relative">
+                      <video ref={videoRef} autoPlay playsInline className="w-full rounded-lg" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={handleCameraClose}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+
+                  {previewUrl && (
+                    <div className="relative">
+                      <img src={previewUrl} alt="Preview" className="w-full rounded-lg" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={handleRemoveImage}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+
+                  <Button
+                    onClick={handleAnalyze}
+                    className="w-full"
+                    disabled={!selectedImage || isAnalyzing}
+                  >
+                    {isAnalyzing ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="animate-spin h-4 w-4 border-2 border-white rounded-full border-t-transparent" />
+                        <span>🧠 Predict</span>
+                      </div>
+                    ) : (
+                      <span>🧠 Predict</span>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Right Side - AI/ML Prediction Output */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-primary">AI/ML Prediction Output</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Common Issues for Selected Crop */}
+                  <div>
+                    <h3 className="font-medium mb-3">Common {selectedCrop.name} Issues:</h3>
+                    <div className="space-y-3">
+                      {selectedCrop.diseases.length > 0 ? (
+                        selectedCrop.diseases.map((disease, index) => (
+                          <div key={index} className="flex space-x-3 p-3 border rounded-lg">
+                            <img
+                              src={disease.image}
+                              alt={disease.name}
+                              className="w-16 h-16 rounded object-cover"
+                            />
+                            <div>
+                              <h4 className="font-medium text-sm">{disease.name}</h4>
+                              <p className="text-xs text-muted-foreground">{disease.description}</p>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No common diseases data available for {selectedCrop.name}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Analysis Result */}
+                  {analysisResult && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="p-4 bg-primary/10 border border-primary/20 rounded-lg"
+                    >
+                      <h3 className="font-medium text-primary mb-2">Analysis Result:</h3>
+                      <p className="text-sm">{analysisResult}</p>
+                    </motion.div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Advanced Mode */}
+          {mode === 'advanced' && (
+            <motion.div
+              key="advanced-mode"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="grid lg:grid-cols-2 gap-6"
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-secondary">Advanced Crop Analysis</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="text-sm text-muted-foreground">
+                    Upload your crop images directly for advanced AI analysis
+                  </div>
+                  
+                  <div
+                    {...getRootProps()}
+                    className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                      isDragActive ? 'border-secondary bg-secondary/5' : 'border-border hover:border-secondary/50'
+                    }`}
+                  >
+                    <input {...getInputProps()} />
+                    <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-lg font-medium">Drop crop images here or click to browse</p>
+                    <p className="text-sm text-muted-foreground mt-2">Advanced analysis with detailed reports</p>
+                  </div>
+
+                  {previewUrl && (
+                    <div className="relative">
+                      <img src={previewUrl} alt="Preview" className="w-full rounded-lg" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={handleRemoveImage}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+
+                  <Button
+                    onClick={handleAnalyze}
+                    className="w-full"
+                    disabled={!selectedImage || isAnalyzing}
+                    variant="secondary"
+                  >
+                    {isAnalyzing ? 'Analyzing...' : 'Run Advanced Analysis'}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-secondary">Advanced Results</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {analysisResult ? (
+                    <div className="space-y-4">
+                      <Badge variant="secondary">Advanced Analysis Complete</Badge>
+                      <p className="text-sm">{analysisResult}</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Upload an image to see advanced analysis results</p>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Hyperspectral Mode */}
+          {mode === 'hyperspectral' && (
+            <motion.div
+              key="hyperspectral-mode"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="grid lg:grid-cols-2 gap-6"
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-accent-foreground">Hyperspectral Imaging</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="text-sm text-muted-foreground">
+                    Upload hyperspectral images for specialized analysis
+                  </div>
+                  
+                  <div
+                    {...getRootProps()}
+                    className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                      isDragActive ? 'border-accent bg-accent/5' : 'border-border hover:border-accent/50'
+                    }`}
+                  >
+                    <input {...getInputProps()} />
+                    <Scan className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-lg font-medium">Drop hyperspectral images here</p>
+                    <p className="text-sm text-muted-foreground mt-2">No crop selection required</p>
+                  </div>
+
+                  {previewUrl && (
+                    <div className="relative">
+                      <img src={previewUrl} alt="Preview" className="w-full rounded-lg" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={handleRemoveImage}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+
+                  <Button
+                    onClick={handleAnalyze}
+                    className="w-full bg-accent hover:bg-accent/90"
+                    disabled={!selectedImage || isAnalyzing}
+                  >
+                    {isAnalyzing ? 'Processing Hyperspectral Data...' : 'Analyze Hyperspectral Image'}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-accent-foreground">Hyperspectral Analysis</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {analysisResult ? (
+                    <div className="space-y-4">
+                      <Badge className="bg-accent hover:bg-accent/90">Hyperspectral Complete</Badge>
+                      <p className="text-sm">{analysisResult}</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Upload a hyperspectral image to see detailed spectral analysis</p>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </Layout>
   );
