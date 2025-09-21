@@ -230,7 +230,7 @@ const DiseaseDetector: React.FC = () => {
           className="text-center space-y-3 mb-6"
         >
           <motion.h1 
-            className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent"
+            className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent"
             animate={{ 
               backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
             }}
@@ -239,31 +239,7 @@ const DiseaseDetector: React.FC = () => {
             Crop Disease Detection
           </motion.h1>
           <motion.p 
-            className="text-base text-muted-foreground max-w-2xl mx-auto px-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          >
-            Identify and diagnose crop diseases using advanced AI technology. Upload images of your crops to get instant analysis and treatment recommendations.
-          </motion.p>
-        </motion.div>
-        {/* Header Section */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center space-y-4 mb-8"
-        >
-          <motion.h1 
-            className="text-4xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent"
-            animate={{ 
-              backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-            }}
-            transition={{ duration: 3, repeat: Infinity }}
-          >
-            Crop Disease Detection
-          </motion.h1>
-          <motion.p 
-            className="text-lg text-muted-foreground max-w-2xl mx-auto"
+            className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto px-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
@@ -274,12 +250,12 @@ const DiseaseDetector: React.FC = () => {
 
         {/* Mode Selector */}
         <Card>
-          <CardContent className="p-4">
-            <div className="flex justify-center space-x-1">
+          <CardContent className="p-2 sm:p-3">
+            <div className="flex justify-center space-x-0.5 sm:space-x-1">
               {Object.entries(modeConfig).map(([key, config]) => (
                 <motion.button
                   key={key}
-                  className={`relative px-4 py-2 rounded-lg font-medium transition-all text-sm ${
+                  className={`relative px-2 sm:px-3 py-1.5 sm:py-2 rounded-md font-medium transition-all text-xs sm:text-sm ${
                     mode === key ? 'text-white' : 'text-muted-foreground hover:text-foreground'
                   }`}
                   onClick={() => {
@@ -291,16 +267,17 @@ const DiseaseDetector: React.FC = () => {
                 >
                   {mode === key && (
                     <motion.div
-                      className={`absolute inset-0 rounded-lg ${config.color}`}
+                      className={`absolute inset-0 rounded-md ${config.color}`}
                       layoutId="activeMode"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                     />
                   )}
-                  <div className="relative flex items-center space-x-2">
-                    <config.icon className="w-4 h-4" />
-                    <span>{config.label}</span>
+                  <div className="relative flex items-center space-x-1 sm:space-x-2">
+                    <config.icon className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">{config.label}</span>
+                    <span className="sm:hidden">{config.label.slice(0, 4)}</span>
                   </div>
                 </motion.button>
               ))}
@@ -321,24 +298,24 @@ const DiseaseDetector: React.FC = () => {
                 <CardHeader>
                   <CardTitle className="text-center">Select the crop you are having issues with</CardTitle>
                 </CardHeader>
-                <CardContent className="p-6">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
                     {crops.map((crop) => (
                       <motion.button
                         key={crop.id}
-                        className="p-3 border rounded-lg hover:border-primary transition-colors"
+                        className="p-2 sm:p-3 border rounded-lg hover:border-primary transition-colors"
                         onClick={() => setSelectedCrop(crop)}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
-                        <div className="aspect-square rounded-lg overflow-hidden mb-2 w-16 h-16 sm:w-20 sm:h-20 mx-auto">
+                        <div className="aspect-square rounded-lg overflow-hidden mb-2 w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 mx-auto">
                           <img
                             src={crop.image}
                             alt={crop.name}
                             className="w-full h-full object-cover"
                           />
                         </div>
-                        <h3 className="font-medium text-center text-sm">{crop.name}</h3>
+                        <h3 className="font-medium text-center text-xs sm:text-sm">{crop.name}</h3>
                       </motion.button>
                     ))}
                   </div>
@@ -354,7 +331,7 @@ const DiseaseDetector: React.FC = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="grid lg:grid-cols-2 gap-4 sm:gap-6"
+              className="grid lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6"
             >
               {/* Left Side - Upload Image */}
               <Card>
@@ -407,17 +384,6 @@ const DiseaseDetector: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="text-sm text-muted-foreground">
-                    Paste image here:
-                  </div>
-
-                  <div
-                    className="border-2 border-dashed rounded-lg p-8 text-center text-muted-foreground"
-                    onPaste={handlePasteImage}
-                    tabIndex={0}
-                  >
-                    Paste an image directly into this box...
-                  </div>
 
                   {isCameraOpen && (
                     <div className="relative">
@@ -517,7 +483,7 @@ const DiseaseDetector: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="grid lg:grid-cols-2 gap-6"
+              className="grid lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6"
             >
               <Card className="border-secondary/20 bg-secondary/5">
                 <CardHeader>
@@ -563,17 +529,6 @@ const DiseaseDetector: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="text-sm text-muted-foreground">
-                    Paste image here:
-                  </div>
-
-                  <div
-                    className="border-2 border-dashed border-secondary/30 rounded-lg p-6 text-center text-muted-foreground hover:border-secondary/50 transition-colors"
-                    onPaste={handlePasteImage}
-                    tabIndex={0}
-                  >
-                    Paste an image directly into this box...
-                  </div>
 
                   {isCameraOpen && (
                     <div className="relative">
@@ -638,7 +593,7 @@ const DiseaseDetector: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="grid lg:grid-cols-2 gap-6"
+              className="grid lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6"
             >
               <Card>
                 <CardHeader>
