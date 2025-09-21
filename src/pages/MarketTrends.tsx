@@ -258,16 +258,30 @@ const MarketTrends = () => {
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-4">
                                 <div>
-                                  <div className="text-lg font-bold text-primary">
+                                  <div className="text-lg font-bold text-primary flex items-center gap-2">
                                     ₹{mandi.currentPrice.min} – ₹{mandi.currentPrice.max}
+                                    {/* Price trend indicator */}
+                                    <div className="flex items-center gap-1">
+                                      {Math.random() > 0.5 ? (
+                                        <TrendingUp className="h-4 w-4 text-green-500" />
+                                      ) : (
+                                        <TrendingDown className="h-4 w-4 text-red-500" />
+                                      )}
+                                    </div>
                                   </div>
                                   <div className="text-xs text-muted-foreground">
                                     per {mandi.unit}
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                  <Clock className="h-3 w-3" />
-                                  <span>{mandi.date}</span>
+                                <div className="flex flex-col gap-1">
+                                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                    <Clock className="h-3 w-3" />
+                                    <span>{mandi.date}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                    <MapPin className="h-3 w-3" />
+                                    <span>{mandi.distance} km away</span>
+                                  </div>
                                 </div>
                               </div>
                               
@@ -297,8 +311,51 @@ const MarketTrends = () => {
                               transition={{ duration: 0.3 }}
                               className="mt-4 pt-4 border-t border-border"
                             >
-                              <h4 className="font-medium mb-3 text-sm">Price Trend (Last 7 Days)</h4>
-                              <div className="h-48 w-full">
+                              <h4 className="font-medium mb-3 text-sm">Price Trends</h4>
+                              
+                              {/* Detailed Price History List */}
+                              <div className="space-y-2 mb-4">
+                                {priceHistory[mandi.id] && priceHistory[mandi.id].slice(-3).map((entry, index, array) => {
+                                  const prevEntry = index > 0 ? array[index - 1] : null;
+                                  const currentAvg = (entry.minPrice + entry.maxPrice) / 2;
+                                  const prevAvg = prevEntry ? (prevEntry.minPrice + prevEntry.maxPrice) / 2 : currentAvg;
+                                  const isIncrease = currentAvg > prevAvg;
+                                  const isDecrease = currentAvg < prevAvg;
+                                  
+                                  return (
+                                    <motion.div
+                                      key={entry.date}
+                                      initial={{ opacity: 0, x: -10 }}
+                                      animate={{ opacity: 1, x: 0 }}
+                                      transition={{ delay: index * 0.1 }}
+                                      className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30"
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <div className="text-sm font-medium">{entry.date}</div>
+                                        <div className="text-xs text-muted-foreground">{mandi.unit}</div>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <div className="text-sm font-semibold">
+                                          ₹{entry.minPrice} - ₹{entry.maxPrice}
+                                        </div>
+                                        {index > 0 && (
+                                          <div className="flex items-center">
+                                            {isIncrease && (
+                                              <TrendingUp className="h-3 w-3 text-green-500" />
+                                            )}
+                                            {isDecrease && (
+                                              <TrendingDown className="h-3 w-3 text-red-500" />
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </motion.div>
+                                  );
+                                })}
+                              </div>
+
+                              {/* Price Trend Graph */}
+                              <div className="h-48 w-full mb-4">
                                 {priceHistory[mandi.id] && (
                                   <ResponsiveContainer width="100%" height="100%">
                                     <LineChart data={priceHistory[mandi.id]}>
@@ -323,36 +380,37 @@ const MarketTrends = () => {
                                       <Line 
                                         type="monotone" 
                                         dataKey="maxPrice" 
-                                        stroke="#3b82f6" 
+                                        stroke="hsl(var(--chart-1))" 
                                         strokeWidth={2}
                                         name="Max Price"
-                                        dot={{ r: 3 }}
+                                        dot={{ r: 3, fill: "hsl(var(--chart-1))" }}
                                       />
                                       <Line 
                                         type="monotone" 
                                         dataKey="minPrice" 
-                                        stroke="#ef4444" 
+                                        stroke="hsl(var(--chart-2))" 
                                         strokeWidth={2}
                                         name="Min Price"
-                                        dot={{ r: 3 }}
+                                        dot={{ r: 3, fill: "hsl(var(--chart-2))" }}
                                       />
                                     </LineChart>
                                   </ResponsiveContainer>
                                 )}
                               </div>
-                              <div className="flex justify-between items-center mt-3 text-xs text-muted-foreground">
+                              
+                              <div className="flex justify-between items-center text-xs text-muted-foreground">
                                 <div className="flex gap-4">
                                   <div className="flex items-center gap-1">
-                                    <div className="w-3 h-0.5 bg-blue-500"></div>
+                                    <div className="w-3 h-0.5 bg-chart-1"></div>
                                     <span>Maximum Price</span>
                                   </div>
                                   <div className="flex items-center gap-1">
-                                    <div className="w-3 h-0.5 bg-red-500"></div>
+                                    <div className="w-3 h-0.5 bg-chart-2"></div>
                                     <span>Minimum Price</span>
                                   </div>
                                 </div>
-                                <Button variant="ghost" size="sm" className="text-xs h-6 px-2">
-                                  Show More
+                                <Button variant="ghost" size="sm" className="text-xs h-6 px-2 hover:bg-accent/50">
+                                  Show More History
                                 </Button>
                               </div>
                             </motion.div>

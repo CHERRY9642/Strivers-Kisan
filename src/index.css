@@ -55,6 +55,13 @@ All colors MUST be HSL. Inspired by rural agriculture and nature.
     --farm-sun: 45 100% 51%; /* Yellow sun */
     --farm-sky: 210 100% 95%; /* Light blue sky */
     
+    /* Chart colors for data visualization */
+    --chart-1: 220 70% 50%; /* Blue for maximum prices */
+    --chart-2: 0 84% 60%; /* Red for minimum prices */
+    --chart-3: 142 76% 36%; /* Green for trends */
+    --chart-4: 45 100% 51%; /* Yellow for highlights */
+    --chart-5: 262 83% 58%; /* Purple for additional data */
+    
     /* Animation variables - Slower for smoother experience */
     --transition-smooth: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
@@ -121,6 +128,13 @@ All colors MUST be HSL. Inspired by rural agriculture and nature.
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Chart colors for dark mode */
+    --chart-1: 220 70% 50%;
+    --chart-2: 0 84% 60%;
+    --chart-3: 142 76% 36%;
+    --chart-4: 45 100% 51%;
+    --chart-5: 262 83% 58%;
   }
 }
 
