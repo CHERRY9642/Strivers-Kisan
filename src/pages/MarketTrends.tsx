@@ -5,373 +5,391 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   TrendingUp, 
   TrendingDown, 
-  Mic,
   Search,
-  ArrowUpRight,
-  ArrowDownRight,
-  CalendarDays,
-  MapPin
+  MapPin,
+  Clock,
+  Heart,
+  HeartOff,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+
+// Import commodity images
+import tomatoImg from '@/assets/commodities/tomato.jpg';
+import beansImg from '@/assets/commodities/beans.jpg';
+import riceImg from '@/assets/commodities/rice.jpg';
+import onionImg from '@/assets/commodities/onion.jpg';
+import wheatImg from '@/assets/commodities/wheat.jpg';
+import potatoImg from '@/assets/commodities/potato.jpg';
+
+interface Commodity {
+  id: string;
+  name: string;
+  image: string;
+  category: string;
+}
+
+interface Mandi {
+  id: string;
+  name: string;
+  district: string;
+  state: string;
+  distance: number;
+  currentPrice: { min: number; max: number };
+  unit: string;
+  date: string;
+  isFollowing: boolean;
+}
+
+interface PriceHistory {
+  date: string;
+  minPrice: number;
+  maxPrice: number;
+}
 
 const MarketTrends = () => {
   const { translateSync } = useLanguage();
-  const [query, setQuery] = useState('');
-  const [isListening, setIsListening] = useState(false);
-  const [selectedCrop, setSelectedCrop] = useState<string | null>(null);
+  const [selectedCommodity, setSelectedCommodity] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedMandi, setSelectedMandi] = useState<string>('');
+  const [expandedMandi, setExpandedMandi] = useState<string>('');
+  const [followedMandis, setFollowedMandis] = useState<Set<string>>(new Set());
 
-  const marketData = [
-    {
-      crop: 'Tomato',
-      currentPrice: 45,
-      previousPrice: 40,
-      unit: 'kg',
-      change: 12.5,
-      trend: 'up',
-      market: 'Bangalore APMC',
-      forecast: 'Expected to rise by 8% this week'
-    },
-    {
-      crop: 'Onion',
-      currentPrice: 32,
-      previousPrice: 35,
-      unit: 'kg',
-      change: -8.6,
-      trend: 'down',
-      market: 'Mysore Market',
-      forecast: 'Seasonal dip, recovery expected next month'
-    },
-    {
-      crop: 'Potato',
-      currentPrice: 28,
-      previousPrice: 27,
-      unit: 'kg',
-      change: 3.7,
-      trend: 'up',
-      market: 'Hassan Market',
-      forecast: 'Stable prices expected'
-    },
-    {
-      crop: 'Rice',
-      currentPrice: 52,
-      previousPrice: 53,
-      unit: 'kg',
-      change: -1.9,
-      trend: 'down',
-      market: 'Mandya APMC',
-      forecast: 'Minor fluctuation, overall stable'
-    },
-    {
-      crop: 'Wheat',
-      currentPrice: 38,
-      previousPrice: 36,
-      unit: 'kg',
-      change: 5.6,
-      trend: 'up',
-      market: 'Belgaum Market',
-      forecast: 'Strong demand driving prices up'
-    },
-    {
-      crop: 'Sugarcane',
-      currentPrice: 3500,
-      previousPrice: 3400,
-      unit: 'ton',
-      change: 2.9,
-      trend: 'up',
-      market: 'Mandya Sugar Mill',
-      forecast: 'Processing season boost'
-    }
+  const commodities: Commodity[] = [
+    { id: 'tomato', name: 'Tomato', image: tomatoImg, category: 'Vegetables' },
+    { id: 'beans', name: 'Beans', image: beansImg, category: 'Vegetables' },
+    { id: 'rice', name: 'Rice', image: riceImg, category: 'Cereals' },
+    { id: 'onion', name: 'Onion', image: onionImg, category: 'Vegetables' },
+    { id: 'wheat', name: 'Wheat', image: wheatImg, category: 'Cereals' },
+    { id: 'potato', name: 'Potato', image: potatoImg, category: 'Vegetables' },
   ];
 
-  const handleVoiceQuery = () => {
-    setIsListening(true);
-    // Simulate voice recognition
-    setTimeout(() => {
-      setQuery('What is the price of tomatoes today?');
-      setIsListening(false);
-      setSelectedCrop('Tomato');
-    }, 2000);
+  const mandis: Record<string, Mandi[]> = {
+    tomato: [
+      { id: '1', name: 'Bangalore APMC', district: 'Bangalore', state: 'Karnataka', distance: 15, currentPrice: { min: 45, max: 52 }, unit: '10 kg', date: '2024-01-20', isFollowing: false },
+      { id: '2', name: 'Mysore Market', district: 'Mysore', state: 'Karnataka', distance: 41, currentPrice: { min: 38, max: 48 }, unit: '10 kg', date: '2024-01-20', isFollowing: false },
+      { id: '3', name: 'Hassan APMC', district: 'Hassan', state: 'Karnataka', distance: 67, currentPrice: { min: 42, max: 50 }, unit: '10 kg', date: '2024-01-20', isFollowing: false },
+    ],
+    rice: [
+      { id: '4', name: 'Mandya APMC', district: 'Mandya', state: 'Karnataka', distance: 22, currentPrice: { min: 2800, max: 3200 }, unit: 'Quintal', date: '2024-01-20', isFollowing: false },
+      { id: '5', name: 'Tumkur Market', district: 'Tumkur', state: 'Karnataka', distance: 35, currentPrice: { min: 2750, max: 3150 }, unit: 'Quintal', date: '2024-01-20', isFollowing: false },
+    ],
+    onion: [
+      { id: '6', name: 'Belgaum APMC', district: 'Belgaum', state: 'Karnataka', distance: 125, currentPrice: { min: 32, max: 38 }, unit: '10 kg', date: '2024-01-20', isFollowing: false },
+      { id: '7', name: 'Hubli Market', district: 'Hubli', state: 'Karnataka', distance: 98, currentPrice: { min: 30, max: 36 }, unit: '10 kg', date: '2024-01-20', isFollowing: false },
+    ],
   };
 
-  const handleCropSelect = (crop: string) => {
-    setSelectedCrop(crop);
-    setQuery(`${crop} price information`);
+  const priceHistory: Record<string, PriceHistory[]> = {
+    '1': [
+      { date: 'Jan 15', minPrice: 40, maxPrice: 45 },
+      { date: 'Jan 16', minPrice: 42, maxPrice: 48 },
+      { date: 'Jan 17', minPrice: 43, maxPrice: 49 },
+      { date: 'Jan 18', minPrice: 44, maxPrice: 50 },
+      { date: 'Jan 19', minPrice: 45, maxPrice: 51 },
+      { date: 'Jan 20', minPrice: 45, maxPrice: 52 },
+    ],
+    '2': [
+      { date: 'Jan 15', minPrice: 35, maxPrice: 42 },
+      { date: 'Jan 16', minPrice: 36, maxPrice: 43 },
+      { date: 'Jan 17', minPrice: 37, maxPrice: 45 },
+      { date: 'Jan 18', minPrice: 37, maxPrice: 46 },
+      { date: 'Jan 19', minPrice: 38, maxPrice: 47 },
+      { date: 'Jan 20', minPrice: 38, maxPrice: 48 },
+    ],
+  };
+
+  const filteredMandis = selectedCommodity 
+    ? (mandis[selectedCommodity] || []).filter(mandi => 
+        mandi.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        mandi.district.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        mandi.state.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : [];
+
+  const toggleFollow = (mandiId: string) => {
+    const newFollowed = new Set(followedMandis);
+    if (newFollowed.has(mandiId)) {
+      newFollowed.delete(mandiId);
+    } else {
+      newFollowed.add(mandiId);
+    }
+    setFollowedMandis(newFollowed);
+  };
+
+  const toggleExpandMandi = (mandiId: string) => {
+    setExpandedMandi(expandedMandi === mandiId ? '' : mandiId);
   };
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="min-h-screen bg-gradient-to-br from-background to-accent/5">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center"
+          className="text-center py-6 px-4"
         >
-          <h1 className="text-hero text-primary font-indian mb-2">
-            📈 {translateSync('Market Trends')}
+          <h1 className="text-3xl md:text-4xl font-bold text-primary mb-3 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            📊 Market Trends
           </h1>
-          <p className="text-lg text-muted-foreground">
-            {translateSync('Real-time market prices and trends')}
+          <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto">
+            Get real-time commodity prices from nearby mandis and make informed selling decisions
           </p>
         </motion.div>
 
-        {/* Voice Query Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Mic className="h-5 w-5 text-primary" />
-                <span>{translateSync('Ask About Prices')}</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex space-x-2">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input
-                    placeholder={translateSync("Ask: What is tomato price today?")}
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Button
-                  onClick={handleVoiceQuery}
-                  disabled={isListening}
-                  className={`voice-button h-auto px-4 ${isListening ? 'animate-pulse-soft' : ''}`}
-                >
-                  {isListening ? (
-                    <motion.div
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ duration: 0.5, repeat: Infinity }}
-                    >
-                      <Mic className="h-4 w-4" />
-                    </motion.div>
-                  ) : (
-                    <Mic className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
+        <div className="px-4 pb-6 space-y-6">
+          {/* Commodity Selection */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Select Commodity</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="w-full">
+                  <div className="flex gap-3 pb-2">
+                    {commodities.map((commodity) => (
+                      <motion.div
+                        key={commodity.id}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className={`flex-shrink-0 cursor-pointer p-3 rounded-lg border-2 transition-all duration-300 ${
+                          selectedCommodity === commodity.id
+                            ? 'border-primary bg-primary/10 shadow-lg'
+                            : 'border-border hover:border-accent hover:bg-accent/5'
+                        }`}
+                        onClick={() => setSelectedCommodity(commodity.id)}
+                      >
+                        <div className="text-center w-20">
+                          <img
+                            src={commodity.image}
+                            alt={commodity.name}
+                            className="w-12 h-12 object-cover rounded-full mx-auto mb-2 border-2 border-background shadow-sm"
+                          />
+                          <p className="text-xs font-medium">{commodity.name}</p>
+                          <p className="text-xs text-muted-foreground">{commodity.category}</p>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </motion.div>
 
-              {/* Quick Query Buttons */}
-              <div className="flex flex-wrap gap-2">
-                {['Tomato', 'Onion', 'Rice', 'Wheat'].map((crop) => (
-                  <Button
-                    key={crop}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCropSelect(crop)}
-                    className="text-xs"
-                  >
-                    {crop} Price
-                  </Button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Selected Crop Details */}
-        <AnimatePresence>
-          {selectedCrop && (
+          {/* Search Bar */}
+          {selectedCommodity && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
             >
-              <Card className="border-accent shadow-glow">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>{selectedCrop} {translateSync('Price Analysis')}</span>
-                    <Badge variant="secondary" className="text-accent">
-                      {translateSync('Live Data')}
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {(() => {
-                    const crop = marketData.find(c => c.crop === selectedCrop);
-                    if (!crop) return null;
-                    
-                    return (
-                      <div className="space-y-6">
-                        {/* Current Price */}
-                        <div className="text-center">
-                          <div className="text-4xl font-bold text-primary mb-2">
-                            ₹{crop.currentPrice}
-                            <span className="text-lg text-muted-foreground">/{crop.unit}</span>
-                          </div>
-                          <div className="flex items-center justify-center space-x-2">
-                            {crop.trend === 'up' ? (
-                              <ArrowUpRight className="h-5 w-5 text-green-500" />
-                            ) : (
-                              <ArrowDownRight className="h-5 w-5 text-red-500" />
-                            )}
-                            <span className={`font-medium ${
-                              crop.trend === 'up' ? 'text-green-500' : 'text-red-500'
-                            }`}>
-                              {crop.change > 0 ? '+' : ''}{crop.change}%
-                            </span>
-                            <span className="text-sm text-muted-foreground">
-                              vs last week
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Market Info */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <div className="flex items-center space-x-2 text-sm">
-                              <MapPin className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-medium">{translateSync('Market')}:</span>
-                              <span>{crop.market}</span>
-                            </div>
-                            <div className="flex items-center space-x-2 text-sm">
-                              <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-medium">{translateSync('Updated')}:</span>
-                              <span>2 hours ago</span>
-                            </div>
-                          </div>
-                          <div className="p-3 bg-accent/10 rounded-lg">
-                            <h4 className="font-medium text-sm mb-1">{translateSync('AI Forecast')}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              {crop.forecast}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      placeholder="Search by Mandi / District / State"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10 h-12 text-base"
+                    />
+                  </div>
                 </CardContent>
               </Card>
             </motion.div>
           )}
-        </AnimatePresence>
 
-        {/* Market Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-        >
-          {marketData.map((item, index) => (
+          {/* Mandis List */}
+          {selectedCommodity && (
             <motion.div
-              key={item.crop}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              whileHover={{ scale: 1.02 }}
-              className="cursor-pointer"
-              onClick={() => setSelectedCrop(item.crop)}
+              transition={{ delay: 0.3 }}
+              className="space-y-3"
             >
-              <Card className={`hover:shadow-soft transition-all ${
-                selectedCrop === item.crop ? 'ring-2 ring-accent' : ''
-              }`}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{item.crop}</CardTitle>
-                    {item.trend === 'up' ? (
-                      <TrendingUp className="h-5 w-5 text-green-500" />
-                    ) : (
-                      <TrendingDown className="h-5 w-5 text-red-500" />
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-2xl font-bold text-primary">
-                        ₹{item.currentPrice}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        per {item.unit}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className={`text-sm font-medium ${
-                        item.trend === 'up' ? 'text-green-500' : 'text-red-500'
-                      }`}>
-                        {item.change > 0 ? '+' : ''}{item.change}%
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        change
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="pt-2 border-t border-border">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      {item.market}
-                    </div>
-                    <div className="text-xs text-primary">
-                      Previous: ₹{item.previousPrice}/{item.unit}
-                    </div>
-                  </div>
+              {filteredMandis.length > 0 ? (
+                filteredMandis.map((mandi, index) => (
+                  <motion.div
+                    key={mandi.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <Card className="overflow-hidden hover:shadow-lg transition-all duration-300">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between mb-2">
+                              <div>
+                                <h3 className="font-semibold text-base">{mandi.name}</h3>
+                                <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                                  <div className="flex items-center gap-1">
+                                    <MapPin className="h-3 w-3" />
+                                    <span>{mandi.district}, {mandi.state}</span>
+                                  </div>
+                                  <span>{mandi.distance} km</span>
+                                </div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleFollow(mandi.id)}
+                                className="h-8 px-2"
+                              >
+                                {followedMandis.has(mandi.id) ? (
+                                  <Heart className="h-4 w-4 fill-red-500 text-red-500" />
+                                ) : (
+                                  <HeartOff className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4">
+                                <div>
+                                  <div className="text-lg font-bold text-primary">
+                                    ₹{mandi.currentPrice.min} – ₹{mandi.currentPrice.max}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    per {mandi.unit}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Clock className="h-3 w-3" />
+                                  <span>{mandi.date}</span>
+                                </div>
+                              </div>
+                              
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => toggleExpandMandi(mandi.id)}
+                                className="ml-2"
+                              >
+                                {expandedMandi === mandi.id ? (
+                                  <ChevronUp className="h-4 w-4" />
+                                ) : (
+                                  <ChevronDown className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Expanded Price History */}
+                        <AnimatePresence>
+                          {expandedMandi === mandi.id && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.3 }}
+                              className="mt-4 pt-4 border-t border-border"
+                            >
+                              <h4 className="font-medium mb-3 text-sm">Price Trend (Last 7 Days)</h4>
+                              <div className="h-48 w-full">
+                                {priceHistory[mandi.id] && (
+                                  <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={priceHistory[mandi.id]}>
+                                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                                      <XAxis 
+                                        dataKey="date" 
+                                        fontSize={10}
+                                        tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                                      />
+                                      <YAxis 
+                                        fontSize={10}
+                                        tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                                      />
+                                      <Tooltip
+                                        contentStyle={{
+                                          backgroundColor: 'hsl(var(--background))',
+                                          border: '1px solid hsl(var(--border))',
+                                          borderRadius: '6px',
+                                          fontSize: '12px'
+                                        }}
+                                      />
+                                      <Line 
+                                        type="monotone" 
+                                        dataKey="maxPrice" 
+                                        stroke="#3b82f6" 
+                                        strokeWidth={2}
+                                        name="Max Price"
+                                        dot={{ r: 3 }}
+                                      />
+                                      <Line 
+                                        type="monotone" 
+                                        dataKey="minPrice" 
+                                        stroke="#ef4444" 
+                                        strokeWidth={2}
+                                        name="Min Price"
+                                        dot={{ r: 3 }}
+                                      />
+                                    </LineChart>
+                                  </ResponsiveContainer>
+                                )}
+                              </div>
+                              <div className="flex justify-between items-center mt-3 text-xs text-muted-foreground">
+                                <div className="flex gap-4">
+                                  <div className="flex items-center gap-1">
+                                    <div className="w-3 h-0.5 bg-blue-500"></div>
+                                    <span>Maximum Price</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <div className="w-3 h-0.5 bg-red-500"></div>
+                                    <span>Minimum Price</span>
+                                  </div>
+                                </div>
+                                <Button variant="ghost" size="sm" className="text-xs h-6 px-2">
+                                  Show More
+                                </Button>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))
+              ) : selectedCommodity ? (
+                <Card>
+                  <CardContent className="text-center py-8">
+                    <p className="text-muted-foreground">No mandis found for the selected commodity</p>
+                  </CardContent>
+                </Card>
+              ) : null}
+            </motion.div>
+          )}
+
+          {!selectedCommodity && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <Card>
+                <CardContent className="text-center py-12">
+                  <div className="text-4xl mb-4">🌾</div>
+                  <h3 className="text-lg font-semibold mb-2">Select a Commodity</h3>
+                  <p className="text-muted-foreground">
+                    Choose a commodity above to see nearby mandi prices and trends
+                  </p>
                 </CardContent>
               </Card>
             </motion.div>
-          ))}
-        </motion.div>
-
-        {/* Market Insights */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle>{translateSync('Market Insights')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="p-3 bg-green-50 border-l-4 border-green-400 rounded"
-                >
-                  <h4 className="font-medium text-green-800">{translateSync('Best Time to Sell')}</h4>
-                  <p className="text-sm text-green-700 mt-1">
-                    {translateSync('Tomato prices are trending upward. Consider selling within the next 2-3 days for maximum profit.')}
-                  </p>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5 }}
-                  className="p-3 bg-blue-50 border-l-4 border-blue-400 rounded"
-                >
-                  <h4 className="font-medium text-blue-800">{translateSync('Seasonal Trend')}</h4>
-                  <p className="text-sm text-blue-700 mt-1">
-                    {translateSync('Rice prices typically stabilize during this period. Good time for long-term planning.')}
-                  </p>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6 }}
-                  className="p-3 bg-orange-50 border-l-4 border-orange-400 rounded"
-                >
-                  <h4 className="font-medium text-orange-800">{translateSync('Weather Impact')}</h4>
-                  <p className="text-sm text-orange-700 mt-1">
-                    {translateSync('Expected rainfall may affect onion prices. Monitor closely for the next week.')}
-                  </p>
-                </motion.div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+          )}
+        </div>
       </div>
     </Layout>
   );
