@@ -83,6 +83,8 @@ const GroceryMarketplace = () => {
   });
   const [productImages, setProductImages] = useState<File[]>([]);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [showOrderConfirmation, setShowOrderConfirmation] = useState(false);
+  const [currentOrder, setCurrentOrder] = useState<any>(null);
 
   const [products, setProducts] = useState<EnhancedProduct[]>([
     {
@@ -344,6 +346,25 @@ const GroceryMarketplace = () => {
     setShowProductDetail(true);
   };
 
+  const handleProceedToPayment = () => {
+    const orderId = Date.now().toString();
+    const totalAmount = cartItems.reduce((total, item) => total + (item.price * item.cartQuantity), 0);
+    
+    const order = {
+      id: orderId,
+      items: cartItems,
+      totalAmount,
+      status: 'confirmed',
+      orderDate: new Date(),
+      deliveryAddress: 'Your Address, City, State', // Mock address
+      paymentMethod: 'Cash on Delivery'
+    };
+    
+    setCurrentOrder(order);
+    setShowOrderConfirmation(true);
+    setShowCart(false);
+  };
+
 
   return (
     <Layout>
@@ -436,7 +457,7 @@ const GroceryMarketplace = () => {
                       <span>{translateSync('Total:')}</span>
                       <span>₹{cartItems.reduce((total, item) => total + (item.price * item.cartQuantity), 0).toFixed(2)}</span>
                     </div>
-                    <Button className="w-full">
+                    <Button className="w-full" onClick={handleProceedToPayment}>
                       {translateSync('Proceed to Payment')}
                     </Button>
                   </DialogFooter>
@@ -836,6 +857,101 @@ const GroceryMarketplace = () => {
                       </Button>
                       <Button variant="outline" onClick={() => setShowAddProduct(false)}>
                         Cancel
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Order Confirmation Modal */}
+        <AnimatePresence>
+          {showOrderConfirmation && currentOrder && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 50 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 50 }}
+                className="w-full max-w-lg"
+              >
+                <Card className="relative overflow-hidden">
+                  {/* Success Animation */}
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-success via-success-foreground to-success"></div>
+                  
+                  <CardHeader className="text-center pb-4">
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.2, type: "spring" }}
+                      className="text-6xl text-success mx-auto mb-2"
+                    >
+                      ✅
+                    </motion.div>
+                    <CardTitle className="text-2xl text-success">Order Confirmed!</CardTitle>
+                    <p className="text-muted-foreground">Your order has been placed successfully</p>
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-4">
+                    <div className="bg-muted p-4 rounded-lg space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Order ID:</span>
+                        <span className="text-primary font-mono">#{currentOrder.id}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Total Amount:</span>
+                        <span className="text-xl font-bold text-success">₹{currentOrder.totalAmount.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Payment Method:</span>
+                        <span>{currentOrder.paymentMethod}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Delivery Address:</span>
+                        <span className="text-right text-sm">{currentOrder.deliveryAddress}</span>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-medium mb-2">Order Items:</h4>
+                      <div className="space-y-2">
+                        {currentOrder.items.map((item: CartItem) => (
+                          <div key={item.id} className="flex justify-between items-center text-sm">
+                            <span>{item.name} x {item.cartQuantity}</span>
+                            <span>₹{(item.price * item.cartQuantity).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="flex space-x-2 pt-4">
+                      <Button 
+                        className="flex-1" 
+                        onClick={() => {
+                          setShowOrderConfirmation(false);
+                          setCartItems([]);
+                          toast({
+                            title: "Order placed successfully!",
+                            description: "You can track your order in the Orders section.",
+                          });
+                        }}
+                      >
+                        Continue Shopping
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          setShowOrderConfirmation(false);
+                          // Navigate to orders page (will be implemented)
+                        }}
+                      >
+                        Track Order
                       </Button>
                     </div>
                   </CardContent>

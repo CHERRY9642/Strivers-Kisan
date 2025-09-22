@@ -14,7 +14,8 @@ import {
   ShoppingCart,
   User,
   LogIn,
-  Snowflake
+  Snowflake,
+  Package
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
@@ -72,6 +73,18 @@ const menuItems = [
     url: '/grocery-marketplace',
     icon: ShoppingCart,
     description: '🛒 Buy & sell produce'
+  },
+  {
+    title: 'Orders',
+    url: '/orders',
+    icon: Package,
+    description: '📦 Track your orders'
+  },
+  {
+    title: 'Artifacts',
+    url: '/artifacts',
+    icon: Package,
+    description: '🏺 Traditional tools'
   },
   {
     title: 'Profile',
