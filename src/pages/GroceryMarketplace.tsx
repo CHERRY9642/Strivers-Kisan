@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { 
@@ -21,19 +22,25 @@ import {
   Phone,
   Package,
   Truck,
+  CheckCircle,
+  Calendar,
   Filter,
   Grid,
   List,
   Heart,
   MessageCircle,
   XCircle,
-  Eye
+  Eye,
+  Camera,
+  ShoppingBag
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
 import { ProductDetailModal } from '@/components/ProductDetailModal';
 import { ImageUpload } from '@/components/ImageUpload';
 import { useSupabase, type EnhancedProduct } from '@/hooks/useSupabase';
+
+type MarketplaceMode = 'grocery' | 'artifacts';
 
 // Legacy Product interface for backward compatibility
 interface Product {
@@ -57,14 +64,50 @@ interface CartItem extends EnhancedProduct {
   cartQuantity: number;
 }
 
+interface Artifact {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  seller: string;
+  location: string;
+  rating: number;
+  images: string[];
+  description: string;
+  condition: string;
+  postedAt: Date;
+  likes: number;
+}
+
+interface Order {
+  id: string;
+  items: Array<{
+    name: string;
+    quantity: number;
+    price: number;
+  }>;
+  totalAmount: number;
+  status: 'processing' | 'shipped' | 'out-for-delivery' | 'delivered';
+  orderDate: Date;
+  deliveryDate?: Date;
+  deliveryAddress: string;
+  trackingNumber: string;
+}
+
 const GroceryMarketplace = () => {
   const { translateSync } = useLanguage();
   const { toast } = useToast();
   const { createProduct, loading } = useSupabase();
   
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  // Main mode state
+  const [mode, setMode] = useState<MarketplaceMode>('grocery');
+  
+  // Common states
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  
+  // Grocery states
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [showProductDetail, setShowProductDetail] = useState(false);
@@ -86,6 +129,22 @@ const GroceryMarketplace = () => {
   const [showOrderConfirmation, setShowOrderConfirmation] = useState(false);
   const [currentOrder, setCurrentOrder] = useState<any>(null);
 
+  // Artifacts states
+  const [showAddArtifact, setShowAddArtifact] = useState(false);
+  const [newArtifact, setNewArtifact] = useState({
+    name: '',
+    price: '',
+    category: 'tools',
+    description: '',
+    condition: 'excellent'
+  });
+  const [artifactImages, setArtifactImages] = useState<File[]>([]);
+
+  // Orders states
+  const [showOrders, setShowOrders] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
+
+  // Mock data
   const [products, setProducts] = useState<EnhancedProduct[]>([
     {
       id: '1',
@@ -151,16 +210,7 @@ const GroceryMarketplace = () => {
       isOrganic: false,
       likesCount: 25,
       savesCount: 20,
-      feedback: [
-        {
-          id: 'f2',
-          userId: 'u2',
-          userName: 'Raj Kumar',
-          rating: 4,
-          comment: 'Good quality rice, worth the price.',
-          createdAt: new Date(Date.now() - 48 * 60 * 60 * 1000)
-        }
-      ]
+      feedback: []
     },
     {
       id: '4',
@@ -180,48 +230,68 @@ const GroceryMarketplace = () => {
       likesCount: 32,
       savesCount: 28,
       feedback: []
-    },
-    {
-      id: '5',
-      name: 'Fresh Spinach',
-      price: 25,
-      unit: 'kg',
-      quantity: 15,
-      seller: 'Green Leaf Farm',
-      location: 'Mandya, Karnataka',
-      rating: 4.3,
-      images: [{ id: 'spinach-1', url: '🥬', alt: 'Fresh Spinach' }],
-      description: 'Tender and nutritious spinach leaves, perfect for healthy meals.',
-      category: 'vegetables',
-      freshness: 'Very Fresh',
-      postedAt: new Date(Date.now() - 3 * 60 * 60 * 1000),
-      isOrganic: true,
-      likesCount: 15,
-      savesCount: 11,
-      feedback: []
-    },
-    {
-      id: '6',
-      name: 'Wheat Flour',
-      price: 42,
-      unit: 'kg',
-      quantity: 80,
-      seller: 'Heritage Mills',
-      location: 'Tumkur, Karnataka',
-      rating: 4.6,
-      images: [{ id: 'flour-1', url: '🌾', alt: 'Wheat Flour' }],
-      description: 'Stone ground whole wheat flour, rich in fiber and nutrients.',
-      category: 'grains',
-      freshness: 'Fresh',
-      postedAt: new Date(Date.now() - 12 * 60 * 60 * 1000),
-      isOrganic: false,
-      likesCount: 9,
-      savesCount: 6,
-      feedback: []
     }
   ]);
 
-  const categories = [
+  const [artifacts, setArtifacts] = useState<Artifact[]>([
+    {
+      id: '1',
+      name: 'Vintage Brass Plow',
+      price: 15000,
+      category: 'tools',
+      seller: 'Heritage Farm Tools',
+      location: 'Mysore, Karnataka',
+      rating: 4.8,
+      images: ['🪓'],
+      description: 'Authentic vintage brass plow from the 1950s. Well-maintained and functional.',
+      condition: 'excellent',
+      postedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      likes: 23
+    },
+    {
+      id: '2',
+      name: 'Traditional Clay Pottery Set',
+      price: 2500,
+      category: 'pottery',
+      seller: 'Kumar Pottery Works',
+      location: 'Bangalore, Karnataka',
+      rating: 4.6,
+      images: ['🏺'],
+      description: 'Handmade clay pots and vessels, perfect for traditional cooking and storage.',
+      condition: 'good',
+      postedAt: new Date(Date.now() - 5 * 60 * 60 * 1000),
+      likes: 18
+    }
+  ]);
+
+  const [orders] = useState<Order[]>([
+    {
+      id: '1234567890',
+      items: [
+        { name: 'Fresh Tomatoes', quantity: 2, price: 45 },
+        { name: 'Organic Onions', quantity: 1, price: 32 }
+      ],
+      totalAmount: 122,
+      status: 'out-for-delivery',
+      orderDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      deliveryAddress: 'HSR Layout, Bangalore, Karnataka',
+      trackingNumber: 'TRK001234'
+    },
+    {
+      id: '1234567891',
+      items: [
+        { name: 'Basmati Rice', quantity: 1, price: 85 }
+      ],
+      totalAmount: 85,
+      status: 'delivered',
+      orderDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      deliveryAddress: 'Koramangala, Bangalore, Karnataka',
+      trackingNumber: 'TRK001235'
+    }
+  ]);
+
+  // Categories
+  const groceryCategories = [
     { id: 'all', name: 'All Products', icon: '🛒' },
     { id: 'vegetables', name: 'Vegetables', icon: '🥕' },
     { id: 'fruits', name: 'Fruits', icon: '🍎' },
@@ -229,6 +299,22 @@ const GroceryMarketplace = () => {
     { id: 'dairy', name: 'Dairy', icon: '🥛' }
   ];
 
+  const artifactCategories = [
+    { id: 'all', name: 'All Categories', icon: '📦' },
+    { id: 'tools', name: 'Farm Tools', icon: '🔨' },
+    { id: 'pottery', name: 'Pottery', icon: '🏺' },
+    { id: 'storage', name: 'Storage', icon: '🫙' },
+    { id: 'decorative', name: 'Decorative', icon: '🎨' }
+  ];
+
+  const conditions = [
+    { value: 'excellent', label: 'Excellent' },
+    { value: 'good', label: 'Good' },
+    { value: 'fair', label: 'Fair' },
+    { value: 'poor', label: 'Poor' }
+  ];
+
+  // Filtered data based on current mode
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          product.seller.toLowerCase().includes(searchQuery.toLowerCase());
@@ -236,6 +322,78 @@ const GroceryMarketplace = () => {
     return matchesSearch && matchesCategory;
   });
 
+  const filteredArtifacts = artifacts.filter(artifact => {
+    const matchesSearch = artifact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         artifact.seller.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || artifact.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  // Helper functions
+  const formatTimeAgo = (date: Date) => {
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Just posted';
+    if (diffInHours === 1) return '1 hour ago';
+    if (diffInHours < 24) return `${diffInHours} hours ago`;
+    return `${Math.floor(diffInHours / 24)} days ago`;
+  };
+
+  const getConditionColor = (condition: string) => {
+    switch (condition) {
+      case 'excellent':
+        return 'bg-success text-success-foreground';
+      case 'good':
+        return 'bg-blue-500 text-blue-50';
+      case 'fair':
+        return 'bg-yellow-500 text-yellow-50';
+      case 'poor':
+        return 'bg-destructive text-destructive-foreground';
+      default:
+        return 'bg-muted text-muted-foreground';
+    }
+  };
+
+  const getStatusColor = (status: Order['status']) => {
+    switch (status) {
+      case 'processing':
+        return 'bg-yellow-500';
+      case 'shipped':
+        return 'bg-blue-500';
+      case 'out-for-delivery':
+        return 'bg-orange-500';
+      case 'delivered':
+        return 'bg-success';
+      default:
+        return 'bg-muted-foreground';
+    }
+  };
+
+  const getStatusText = (status: Order['status']) => {
+    switch (status) {
+      case 'processing':
+        return 'Processing';
+      case 'shipped':
+        return 'Shipped';
+      case 'out-for-delivery':
+        return 'Out for Delivery';
+      case 'delivered':
+        return 'Delivered';
+      default:
+        return 'Unknown';
+    }
+  };
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  // Event handlers for grocery
   const handleAddProduct = async () => {
     if (!newProduct.name || !newProduct.price || !newProduct.quantity) {
       toast({
@@ -278,16 +436,6 @@ const GroceryMarketplace = () => {
       });
       setProductImages([]);
     }
-  };
-
-  const formatTimeAgo = (date: Date) => {
-    const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) return 'Just posted';
-    if (diffInHours === 1) return '1 hour ago';
-    if (diffInHours < 24) return `${diffInHours} hours ago`;
-    return `${Math.floor(diffInHours / 24)} days ago`;
   };
 
   const addToCart = (product: EnhancedProduct) => {
@@ -365,6 +513,53 @@ const GroceryMarketplace = () => {
     setShowCart(false);
   };
 
+  // Event handlers for artifacts
+  const handleAddArtifact = () => {
+    if (!newArtifact.name || !newArtifact.price) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const artifact: Artifact = {
+      id: Date.now().toString(),
+      name: newArtifact.name,
+      price: parseFloat(newArtifact.price),
+      category: newArtifact.category,
+      seller: 'Your Shop', // Mock seller
+      location: 'Your Location', // Mock location
+      rating: 4.0,
+      images: ['📦'], // Mock image
+      description: newArtifact.description,
+      condition: newArtifact.condition,
+      postedAt: new Date(),
+      likes: 0
+    };
+
+    setArtifacts(prev => [artifact, ...prev]);
+    setShowAddArtifact(false);
+    setNewArtifact({
+      name: '',
+      price: '',
+      category: 'tools',
+      description: '',
+      condition: 'excellent'
+    });
+    setArtifactImages([]);
+
+    toast({
+      title: "Artifact listed",
+      description: "Your artifact has been listed successfully!",
+    });
+  };
+
+  const resetToGrocery = () => {
+    setSelectedCategory('all');
+    setSearchQuery('');
+  };
 
   return (
     <Layout>
@@ -376,320 +571,547 @@ const GroceryMarketplace = () => {
           className="text-center"
         >
           <h1 className="text-hero text-primary font-indian mb-2">
-            🛒 {translateSync('Grocery Marketplace')}
+            {mode === 'grocery' ? '🛒' : '🏺'} {translateSync(mode === 'grocery' ? 'Grocery Marketplace' : 'Artifacts Marketplace')}
           </h1>
           <p className="text-lg text-muted-foreground">
-            {translateSync('Buy and sell fresh groceries directly from farmers')}
+            {translateSync(mode === 'grocery' ? 'Buy and sell fresh groceries directly from farmers' : 'Buy and sell traditional farming artifacts and tools')}
           </p>
         </motion.div>
 
-        {/* Search and Controls */}
+        {/* Mode Tab Navigation */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="flex flex-col md:flex-row gap-4 items-center"
+          className="flex justify-center"
         >
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder={translateSync("Search products, sellers...")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          
-          <div className="flex space-x-2">
+          <div className="bg-muted p-1 rounded-lg">
             <Button
-              onClick={() => setShowAddProduct(true)}
-              className="bg-accent hover:bg-accent/90"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              {translateSync('Sell Product')}
-            </Button>
-            
-            <Dialog open={showCart} onOpenChange={setShowCart}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="relative">
-                  <ShoppingCart className="h-4 w-4" />
-                  {cartItems.length > 0 && (
-                    <Badge className="absolute -top-2 -right-2 px-2 py-1 text-xs rounded-full bg-primary text-primary-foreground">
-                      {cartItems.reduce((total, item) => total + item.cartQuantity, 0)}
-                    </Badge>
-                  )}
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>{translateSync('Your Cart')}</DialogTitle>
-                </DialogHeader>
-                <div className="py-4 space-y-4">
-                  {cartItems.length === 0 ? (
-                    <p className="text-center text-muted-foreground">{translateSync('Your cart is empty.')}</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {cartItems.map(item => (
-                        <div key={item.id} className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-2xl">{item.images[0]?.url || '📦'}</span>
-                            <div>
-                              <p className="font-medium">{item.name}</p>
-                              <p className="text-sm text-muted-foreground">₹{item.price}/{item.unit}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Button size="sm" variant="outline" onClick={() => updateCartQuantity(item.id, item.cartQuantity - 1)}>-</Button>
-                            <span>{item.cartQuantity}</span>
-                            <Button size="sm" variant="outline" onClick={() => updateCartQuantity(item.id, item.cartQuantity + 1)}>+</Button>
-                            <Button size="sm" variant="destructive" onClick={() => removeFromCart(item.id)}>
-                              <XCircle className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                {cartItems.length > 0 && (
-                  <DialogFooter className="flex flex-col sm:flex-col sm:space-x-0 sm:space-y-2">
-                    <div className="flex justify-between items-center font-bold text-lg">
-                      <span>{translateSync('Total:')}</span>
-                      <span>₹{cartItems.reduce((total, item) => total + (item.price * item.cartQuantity), 0).toFixed(2)}</span>
-                    </div>
-                    <Button className="w-full" onClick={handleProceedToPayment}>
-                      {translateSync('Proceed to Payment')}
-                    </Button>
-                  </DialogFooter>
-                )}
-              </DialogContent>
-            </Dialog>
-            
-            <Button
-              variant="outline"
-              onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-            >
-              {viewMode === 'grid' ? <List className="h-4 w-4" /> : <Grid className="h-4 w-4" />}
-            </Button>
-          </div>
-        </motion.div>
-
-        {/* Categories */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="flex flex-wrap gap-2"
-        >
-          {categories.map((category) => (
-            <Button
-              key={category.id}
-              variant={selectedCategory === category.id ? "default" : "outline"}
+              variant={mode === 'grocery' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => setSelectedCategory(category.id)}
-              className="flex items-center space-x-2"
+              onClick={() => {
+                setMode('grocery');
+                resetToGrocery();
+              }}
+              className="relative"
             >
-              <span>{category.icon}</span>
-              <span>{category.name}</span>
+              <motion.div
+                animate={{
+                  scale: mode === 'grocery' ? [1, 1.05, 1] : 1,
+                }}
+                transition={{ duration: 0.2 }}
+              >
+                <ShoppingBag className="h-4 w-4 mr-2" />
+                Grocery Market
+              </motion.div>
             </Button>
-          ))}
+            <Button
+              variant={mode === 'artifacts' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => {
+                setMode('artifacts');
+                resetToGrocery();
+              }}
+              className="relative"
+            >
+              <motion.div
+                animate={{
+                  scale: mode === 'artifacts' ? [1, 1.05, 1] : 1,
+                }}
+                transition={{ duration: 0.2 }}
+              >
+                <Package className="h-4 w-4 mr-2" />
+                Artifacts
+              </motion.div>
+            </Button>
+          </div>
         </motion.div>
 
-        {/* Products Grid/List */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className={viewMode === 'grid' 
-            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-            : "space-y-4"
-          }
-        >
-          <AnimatePresence>
-            {filteredProducts.map((product, index) => (
-              <motion.div
-                key={product.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.02 }}
-              >
-                <Card className={`hover:shadow-glow transition-all ${
-                  viewMode === 'list' ? 'flex flex-row' : ''
-                }`}>
-                  {viewMode === 'grid' ? (
-                    <>
-                      <CardHeader className="text-center pb-2">
-                        <div className="text-6xl mb-2">{product.images[0]?.url || '📦'}</div>
-                        <CardTitle className="text-lg">{product.name}</CardTitle>
-                        <div className="flex justify-center space-x-2">
-                          {product.isOrganic && (
-                            <Badge variant="secondary" className="bg-green-100 text-green-700">
-                              Organic
+        {/* Main Content based on mode */}
+        <AnimatePresence mode="wait">
+          {mode === 'grocery' ? (
+            <motion.div
+              key="grocery"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="space-y-6"
+            >
+              {/* Search and Controls */}
+              <div className="flex flex-col md:flex-row gap-4 items-center">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder={translateSync("Search products, sellers...")}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                
+                <div className="flex space-x-2">
+                  <Button onClick={() => setShowOrders(true)} variant="outline">
+                    <Package className="h-4 w-4 mr-2" />
+                    Orders ({orders.length})
+                  </Button>
+                  
+                  <Button
+                    onClick={() => setShowAddProduct(true)}
+                    className="bg-accent hover:bg-accent/90"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    {translateSync('Sell Product')}
+                  </Button>
+                  
+                  <Dialog open={showCart} onOpenChange={setShowCart}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="relative">
+                        <ShoppingCart className="h-4 w-4" />
+                        {cartItems.length > 0 && (
+                          <Badge className="absolute -top-2 -right-2 px-2 py-1 text-xs rounded-full bg-primary text-primary-foreground">
+                            {cartItems.reduce((total, item) => total + item.cartQuantity, 0)}
+                          </Badge>
+                        )}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>{translateSync('Your Cart')}</DialogTitle>
+                      </DialogHeader>
+                      <div className="py-4 space-y-4">
+                        {cartItems.length === 0 ? (
+                          <p className="text-center text-muted-foreground">{translateSync('Your cart is empty.')}</p>
+                        ) : (
+                          <div className="space-y-3">
+                            {cartItems.map(item => (
+                              <div key={item.id} className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-2xl">{item.images[0]?.url || '📦'}</span>
+                                  <div>
+                                    <p className="font-medium">{item.name}</p>
+                                    <p className="text-sm text-muted-foreground">₹{item.price}/{item.unit}</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Button size="sm" variant="outline" onClick={() => updateCartQuantity(item.id, item.cartQuantity - 1)}>-</Button>
+                                  <span>{item.cartQuantity}</span>
+                                  <Button size="sm" variant="outline" onClick={() => updateCartQuantity(item.id, item.cartQuantity + 1)}>+</Button>
+                                  <Button size="sm" variant="destructive" onClick={() => removeFromCart(item.id)}>
+                                    <XCircle className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      {cartItems.length > 0 && (
+                        <DialogFooter className="flex flex-col sm:flex-col sm:space-x-0 sm:space-y-2">
+                          <div className="flex justify-between items-center font-bold text-lg">
+                            <span>{translateSync('Total:')}</span>
+                            <span>₹{cartItems.reduce((total, item) => total + (item.price * item.cartQuantity), 0).toFixed(2)}</span>
+                          </div>
+                          <Button className="w-full" onClick={handleProceedToPayment}>
+                            {translateSync('Proceed to Payment')}
+                          </Button>
+                        </DialogFooter>
+                      )}
+                    </DialogContent>
+                  </Dialog>
+                  
+                  <Button
+                    variant="outline"
+                    onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                  >
+                    {viewMode === 'grid' ? <List className="h-4 w-4" /> : <Grid className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Categories */}
+              <div className="flex flex-wrap gap-2">
+                {groceryCategories.map((category) => (
+                  <Button
+                    key={category.id}
+                    variant={selectedCategory === category.id ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedCategory(category.id)}
+                    className="flex items-center space-x-2"
+                  >
+                    <span>{category.icon}</span>
+                    <span>{category.name}</span>
+                  </Button>
+                ))}
+              </div>
+
+              {/* Products Grid/List */}
+              <div className={viewMode === 'grid' 
+                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                : "space-y-4"
+              }>
+                <AnimatePresence>
+                  {filteredProducts.map((product, index) => (
+                    <motion.div
+                      key={product.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ delay: index * 0.1 }}
+                      whileHover={{ scale: 1.02 }}
+                    >
+                      <Card className={`hover:shadow-glow transition-all ${
+                        viewMode === 'list' ? 'flex flex-row' : ''
+                      }`}>
+                        {viewMode === 'grid' ? (
+                          <>
+                            <CardHeader className="text-center pb-2">
+                              <div className="text-6xl mb-2">{product.images[0]?.url || '📦'}</div>
+                              <CardTitle className="text-lg">{product.name}</CardTitle>
+                              <div className="flex justify-center space-x-2">
+                                {product.isOrganic && (
+                                  <Badge variant="secondary" className="bg-green-100 text-green-700">
+                                    Organic
+                                  </Badge>
+                                )}
+                                <Badge variant="outline">{product.freshness}</Badge>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                              <div className="text-center">
+                                <div className="text-2xl font-bold text-primary">
+                                  ₹{product.price}
+                                  <span className="text-sm text-muted-foreground">/{product.unit}</span>
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  {product.quantity} {product.unit} available
+                                </div>
+                              </div>
+
+                              <p className="text-sm text-muted-foreground text-center">
+                                {product.description}
+                              </p>
+
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between text-sm">
+                                  <div className="flex items-center space-x-1">
+                                    <User className="h-3 w-3" />
+                                    <span>{product.seller}</span>
+                                  </div>
+                                  <div className="flex items-center space-x-1">
+                                    <Star className="h-3 w-3 text-yellow-500" />
+                                    <span>{product.rating}</span>
+                                  </div>
+                                </div>
+                                
+                                <div className="flex items-center justify-between text-sm">
+                                  <div className="flex items-center space-x-1 text-muted-foreground">
+                                    <MapPin className="h-3 w-3" />
+                                    <span>{product.location}</span>
+                                  </div>
+                                  <div className="flex items-center space-x-1 text-muted-foreground">
+                                    <Clock className="h-3 w-3" />
+                                    <span>{formatTimeAgo(product.postedAt)}</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex space-x-2 pt-2">
+                                <Button className="flex-1" size="sm" onClick={() => addToCart(product)}>
+                                  <ShoppingCart className="h-4 w-4 mr-2" />
+                                  Buy Now
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => openProductDetail(product)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <motion.div whileTap={{ scale: 0.9 }}>
+                                  <Button 
+                                    variant={favorites.includes(product.id) ? "default" : "outline"} 
+                                    size="sm"
+                                    onClick={() => toggleFavorite(product.id)}
+                                  >
+                                    <motion.div
+                                      animate={{ 
+                                        scale: favorites.includes(product.id) ? [1, 1.3, 1] : 1,
+                                        rotate: favorites.includes(product.id) ? [0, 15, -15, 0] : 0 
+                                      }}
+                                      transition={{ duration: 0.3 }}
+                                    >
+                                      <Heart 
+                                        className={`h-4 w-4 ${
+                                          favorites.includes(product.id) 
+                                            ? 'text-red-500 fill-red-500' 
+                                            : ''
+                                        }`} 
+                                      />
+                                    </motion.div>
+                                  </Button>
+                                </motion.div>
+                              </div>
+                            </CardContent>
+                          </>
+                        ) : (
+                          // List View
+                          <div className="flex w-full">
+                            <div className="w-20 h-20 flex items-center justify-center text-4xl">
+                              {product.images[0]?.url || '📦'}
+                            </div>
+                            <div className="flex-1 p-4">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <h3 className="text-lg font-semibold">{product.name}</h3>
+                                  <p className="text-sm text-muted-foreground">{product.description}</p>
+                                  <div className="flex items-center space-x-4 mt-2 text-sm">
+                                    <div className="flex items-center space-x-1">
+                                      <User className="h-3 w-3" />
+                                      <span>{product.seller}</span>
+                                    </div>
+                                    <div className="flex items-center space-x-1">
+                                      <MapPin className="h-3 w-3" />
+                                      <span>{product.location}</span>
+                                    </div>
+                                    <div className="flex items-center space-x-1">
+                                      <Star className="h-3 w-3 text-yellow-500" />
+                                      <span>{product.rating}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-xl font-bold text-primary">
+                                    ₹{product.price}/{product.unit}
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    {product.quantity} {product.unit} available
+                                  </div>
+                                  <div className="flex space-x-2 mt-2">
+                                    <Button size="sm" onClick={() => addToCart(product)}>
+                                      <ShoppingCart className="h-4 w-4 mr-1" />
+                                      Buy
+                                    </Button>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => openProductDetail(product)}
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                    <motion.div whileTap={{ scale: 0.9 }}>
+                                      <Button 
+                                        variant={favorites.includes(product.id) ? "default" : "outline"} 
+                                        size="sm"
+                                        onClick={() => toggleFavorite(product.id)}
+                                      >
+                                        <motion.div
+                                          animate={{ 
+                                            scale: favorites.includes(product.id) ? [1, 1.3, 1] : 1,
+                                            rotate: favorites.includes(product.id) ? [0, 15, -15, 0] : 0 
+                                          }}
+                                          transition={{ duration: 0.3 }}
+                                        >
+                                          <Heart 
+                                            className={`h-4 w-4 ${
+                                              favorites.includes(product.id) 
+                                                ? 'text-red-500 fill-red-500' 
+                                                : ''
+                                            }`} 
+                                          />
+                                        </motion.div>
+                                      </Button>
+                                    </motion.div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </Card>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+
+              {/* Empty State */}
+              {filteredProducts.length === 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center py-12"
+                >
+                  <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No products found</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Try adjusting your search or browse different categories
+                  </p>
+                  <Button onClick={() => setShowAddProduct(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Be the first to sell
+                  </Button>
+                </motion.div>
+              )}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="artifacts"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-6"
+            >
+              {/* Search and Add Button */}
+              <div className="flex flex-col md:flex-row gap-4 items-center">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder={translateSync("Search artifacts...")}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Button onClick={() => setShowAddArtifact(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  List Artifact
+                </Button>
+              </div>
+
+              {/* Artifact Categories */}
+              <div className="flex flex-wrap gap-2">
+                {artifactCategories.map((category) => (
+                  <Button
+                    key={category.id}
+                    variant={selectedCategory === category.id ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedCategory(category.id)}
+                    className="flex items-center space-x-2"
+                  >
+                    <span>{category.icon}</span>
+                    <span>{category.name}</span>
+                  </Button>
+                ))}
+              </div>
+
+              {/* Artifacts Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <AnimatePresence>
+                  {filteredArtifacts.map((artifact, index) => (
+                    <motion.div
+                      key={artifact.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ delay: index * 0.1 }}
+                      whileHover={{ scale: 1.02 }}
+                    >
+                      <Card className="hover:shadow-glow transition-all">
+                        <CardHeader className="text-center pb-2">
+                          <div className="text-6xl mb-2">{artifact.images[0]}</div>
+                          <CardTitle className="text-lg">{artifact.name}</CardTitle>
+                          <div className="flex justify-center space-x-2">
+                            <Badge className={getConditionColor(artifact.condition)}>
+                              {artifact.condition}
                             </Badge>
-                          )}
-                          <Badge variant="outline">{product.freshness}</Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-primary">
-                            ₹{product.price}
-                            <span className="text-sm text-muted-foreground">/{product.unit}</span>
+                            <Badge variant="outline">{artifact.category}</Badge>
                           </div>
-                          <div className="text-sm text-muted-foreground">
-                            {product.quantity} {product.unit} available
+                        </CardHeader>
+                        
+                        <CardContent className="space-y-4">
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-primary">
+                              ₹{artifact.price.toLocaleString()}
+                            </div>
                           </div>
-                        </div>
 
-                        <p className="text-sm text-muted-foreground text-center">
-                          {product.description}
-                        </p>
+                          <p className="text-sm text-muted-foreground text-center">
+                            {artifact.description}
+                          </p>
 
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center space-x-1">
-                              <User className="h-3 w-3" />
-                              <span>{product.seller}</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              <Star className="h-3 w-3 text-yellow-500" />
-                              <span>{product.rating}</span>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center space-x-1 text-muted-foreground">
-                              <MapPin className="h-3 w-3" />
-                              <span>{product.location}</span>
-                            </div>
-                            <div className="flex items-center space-x-1 text-muted-foreground">
-                              <Clock className="h-3 w-3" />
-                              <span>{formatTimeAgo(product.postedAt)}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex space-x-2 pt-2">
-                          <Button className="flex-1" size="sm" onClick={() => addToCart(product)}>
-                            <ShoppingCart className="h-4 w-4 mr-2" />
-                            Buy Now
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => openProductDetail(product)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <motion.div
-                            whileTap={{ scale: 0.9 }}
-                          >
-                            <Button 
-                              variant={favorites.includes(product.id) ? "default" : "outline"} 
-                              size="sm"
-                              onClick={() => toggleFavorite(product.id)}
-                            >
-                              <motion.div
-                                animate={{ 
-                                  scale: favorites.includes(product.id) ? [1, 1.3, 1] : 1,
-                                  rotate: favorites.includes(product.id) ? [0, 15, -15, 0] : 0 
-                                }}
-                                transition={{ duration: 0.3 }}
-                              >
-                                <Heart 
-                                  className={`h-4 w-4 ${
-                                    favorites.includes(product.id) 
-                                      ? 'text-red-500 fill-red-500' 
-                                      : ''
-                                  }`} 
-                                />
-                              </motion.div>
-                            </Button>
-                          </motion.div>
-                        </div>
-                      </CardContent>
-                    </>
-                  ) : (
-                    // List View
-                    <div className="flex w-full">
-                       <div className="w-20 h-20 flex items-center justify-center text-4xl">
-                         {product.images[0]?.url || '📦'}
-                       </div>
-                      <div className="flex-1 p-4">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="text-lg font-semibold">{product.name}</h3>
-                            <p className="text-sm text-muted-foreground">{product.description}</p>
-                            <div className="flex items-center space-x-4 mt-2 text-sm">
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between text-sm">
                               <div className="flex items-center space-x-1">
                                 <User className="h-3 w-3" />
-                                <span>{product.seller}</span>
-                              </div>
-                              <div className="flex items-center space-x-1">
-                                <MapPin className="h-3 w-3" />
-                                <span>{product.location}</span>
+                                <span>{artifact.seller}</span>
                               </div>
                               <div className="flex items-center space-x-1">
                                 <Star className="h-3 w-3 text-yellow-500" />
-                                <span>{product.rating}</span>
+                                <span>{artifact.rating}</span>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center justify-between text-sm">
+                              <div className="flex items-center space-x-1 text-muted-foreground">
+                                <MapPin className="h-3 w-3" />
+                                <span>{artifact.location}</span>
+                              </div>
+                              <div className="flex items-center space-x-1 text-muted-foreground">
+                                <Clock className="h-3 w-3" />
+                                <span>{formatTimeAgo(artifact.postedAt)}</span>
                               </div>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="text-xl font-bold text-primary">
-                              ₹{product.price}/{product.unit}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {product.quantity} {product.unit} available
-                            </div>
-                            <div className="flex space-x-2 mt-2">
-                              <Button size="sm" onClick={() => addToCart(product)}>
-                                <ShoppingCart className="h-4 w-4 mr-1" />
-                                Buy
-                              </Button>
-                               <Button 
-                                 variant="outline" 
-                                 size="sm"
-                                 onClick={() => openProductDetail(product)}
-                               >
-                                 <Eye className="h-4 w-4" />
-                               </Button>
-                              <motion.div whileTap={{ scale: 0.9 }}>
-                                <Button 
-                                  variant={favorites.includes(product.id) ? "default" : "outline"} 
-                                  size="sm"
-                                  onClick={() => toggleFavorite(product.id)}
+
+                          <div className="flex space-x-2 pt-2">
+                            <Button className="flex-1" size="sm">
+                              <ShoppingCart className="h-4 w-4 mr-2" />
+                              Buy Now
+                            </Button>
+                            <Button variant="outline" size="sm">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <motion.div whileTap={{ scale: 0.9 }}>
+                              <Button 
+                                variant={favorites.includes(artifact.id) ? "default" : "outline"} 
+                                size="sm"
+                                onClick={() => toggleFavorite(artifact.id)}
+                              >
+                                <motion.div
+                                  animate={{ 
+                                    scale: favorites.includes(artifact.id) ? [1, 1.3, 1] : 1,
+                                    rotate: favorites.includes(artifact.id) ? [0, 15, -15, 0] : 0 
+                                  }}
+                                  transition={{ duration: 0.3 }}
                                 >
-                                  <motion.div
-                                    animate={{ 
-                                      scale: favorites.includes(product.id) ? [1, 1.3, 1] : 1,
-                                      rotate: favorites.includes(product.id) ? [0, 15, -15, 0] : 0 
-                                    }}
-                                    transition={{ duration: 0.3 }}
-                                  >
-                                    <Heart 
-                                      className={`h-4 w-4 ${
-                                        favorites.includes(product.id) 
-                                          ? 'text-red-500 fill-red-500' 
-                                          : ''
-                                      }`} 
-                                    />
-                                  </motion.div>
-                                </Button>
-                              </motion.div>
-                            </div>
+                                  <Heart 
+                                    className={`h-4 w-4 ${
+                                      favorites.includes(artifact.id) 
+                                        ? 'text-red-500 fill-red-500' 
+                                        : ''
+                                    }`} 
+                                  />
+                                </motion.div>
+                              </Button>
+                            </motion.div>
                           </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </Card>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+
+              {/* Empty State for artifacts */}
+              {filteredArtifacts.length === 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center py-12"
+                >
+                  <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No artifacts found</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Be the first to list an artifact in this category
+                  </p>
+                  <Button onClick={() => setShowAddArtifact(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    List First Artifact
+                  </Button>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Product Detail Modal */}
         <ProductDetailModal
@@ -721,7 +1143,6 @@ const GroceryMarketplace = () => {
                     <CardTitle>Add New Product</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    {/* Product Images */}
                     <div>
                       <Label className="text-sm font-medium mb-3 block">Product Images</Label>
                       <ImageUpload 
@@ -730,7 +1151,6 @@ const GroceryMarketplace = () => {
                       />
                     </div>
 
-                    {/* Basic Info */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label className="text-sm font-medium">Product Name *</Label>
@@ -761,7 +1181,6 @@ const GroceryMarketplace = () => {
                       </div>
                     </div>
 
-                    {/* Price and Quantity */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <Label className="text-sm font-medium">Price *</Label>
@@ -802,7 +1221,6 @@ const GroceryMarketplace = () => {
                       </div>
                     </div>
 
-                    {/* Location and Seller */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label className="text-sm font-medium">Seller Name</Label>
@@ -824,7 +1242,6 @@ const GroceryMarketplace = () => {
                       </div>
                     </div>
 
-                    {/* Description */}
                     <div>
                       <Label className="text-sm font-medium">Description</Label>
                       <Textarea
@@ -836,7 +1253,6 @@ const GroceryMarketplace = () => {
                       />
                     </div>
 
-                    {/* Organic checkbox */}
                     <div className="flex items-center space-x-2">
                       <Switch
                         id="organic"
@@ -866,6 +1282,273 @@ const GroceryMarketplace = () => {
           )}
         </AnimatePresence>
 
+        {/* Add Artifact Modal */}
+        <AnimatePresence>
+          {showAddArtifact && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+              onClick={() => setShowAddArtifact(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle>List New Artifact</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div>
+                      <Label className="text-sm font-medium mb-3 block">Artifact Images</Label>
+                      <ImageUpload 
+                        onImagesChange={setArtifactImages}
+                        maxImages={5}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium">Artifact Name *</Label>
+                        <Input
+                          value={newArtifact.name}
+                          onChange={(e) => setNewArtifact({...newArtifact, name: e.target.value})}
+                          placeholder="e.g., Vintage Brass Plow"
+                          className="mt-1"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label className="text-sm font-medium">Category *</Label>
+                        <Select 
+                          value={newArtifact.category} 
+                          onValueChange={(value) => setNewArtifact({...newArtifact, category: value})}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="tools">Farm Tools</SelectItem>
+                            <SelectItem value="pottery">Pottery</SelectItem>
+                            <SelectItem value="storage">Storage</SelectItem>
+                            <SelectItem value="decorative">Decorative</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium">Price *</Label>
+                        <Input
+                          type="number"
+                          value={newArtifact.price}
+                          onChange={(e) => setNewArtifact({...newArtifact, price: e.target.value})}
+                          placeholder="15000"
+                          className="mt-1"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label className="text-sm font-medium">Condition *</Label>
+                        <Select 
+                          value={newArtifact.condition} 
+                          onValueChange={(value) => setNewArtifact({...newArtifact, condition: value})}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Select condition" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {conditions.map((condition) => (
+                              <SelectItem key={condition.value} value={condition.value}>
+                                {condition.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label className="text-sm font-medium">Description</Label>
+                      <Textarea
+                        value={newArtifact.description}
+                        onChange={(e) => setNewArtifact({...newArtifact, description: e.target.value})}
+                        placeholder="Describe the artifact, its history, condition, etc..."
+                        rows={4}
+                        className="mt-1"
+                      />
+                    </div>
+
+                    <div className="flex space-x-2 pt-4">
+                      <Button onClick={handleAddArtifact} className="flex-1">
+                        <Package className="h-4 w-4 mr-2" />
+                        List Artifact
+                      </Button>
+                      <Button variant="outline" onClick={() => setShowAddArtifact(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Orders Modal */}
+        <AnimatePresence>
+          {showOrders && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+              onClick={() => setShowOrders(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Package className="h-5 w-5" />
+                      <span>My Orders</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {orders.map((order, index) => (
+                      <motion.div
+                        key={order.id}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: index * 0.1 }}
+                      >
+                        <Card className="hover:shadow-glow transition-all">
+                          <CardHeader className="pb-3">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <CardTitle className="text-lg">Order #{order.id}</CardTitle>
+                                <div className="flex items-center space-x-4 mt-1 text-sm text-muted-foreground">
+                                  <div className="flex items-center space-x-1">
+                                    <Calendar className="h-3 w-3" />
+                                    <span>{formatDate(order.orderDate)}</span>
+                                  </div>
+                                  <div className="flex items-center space-x-1">
+                                    <MapPin className="h-3 w-3" />
+                                    <span>{order.deliveryAddress}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-xl font-bold text-primary">₹{order.totalAmount}</div>
+                                <Badge className={`${getStatusColor(order.status)} text-white`}>
+                                  {getStatusText(order.status)}
+                                </Badge>
+                              </div>
+                            </div>
+                          </CardHeader>
+                          
+                          <CardContent className="space-y-4">
+                            <div>
+                              <h4 className="font-medium mb-2 text-sm">Items Ordered:</h4>
+                              <div className="space-y-1">
+                                {order.items.map((item, idx) => (
+                                  <div key={idx} className="flex justify-between text-sm text-muted-foreground">
+                                    <span>{item.name} x {item.quantity}</span>
+                                    <span>₹{(item.price * item.quantity).toFixed(2)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="flex space-x-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="flex-1"
+                                onClick={() => setSelectedOrder(selectedOrder === order.id ? null : order.id)}
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                {selectedOrder === order.id ? 'Hide Details' : 'View Details'}
+                              </Button>
+                              
+                              {order.status !== 'delivered' && (
+                                <Button variant="outline" size="sm">
+                                  <Phone className="h-4 w-4 mr-2" />
+                                  Contact Seller
+                                </Button>
+                              )}
+                            </div>
+
+                            <AnimatePresence>
+                              {selectedOrder === order.id && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: 'auto', opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  transition={{ duration: 0.3 }}
+                                  className="border-t pt-4 space-y-3 overflow-hidden"
+                                >
+                                  <div className="bg-muted p-3 rounded-lg space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                      <span className="font-medium">Order Date:</span>
+                                      <span>{formatDate(order.orderDate)}</span>
+                                    </div>
+                                    {order.deliveryDate && (
+                                      <div className="flex justify-between">
+                                        <span className="font-medium">Delivered On:</span>
+                                        <span className="text-success">{formatDate(order.deliveryDate)}</span>
+                                      </div>
+                                    )}
+                                    <div className="flex justify-between">
+                                      <span className="font-medium">Tracking Number:</span>
+                                      <span className="font-mono">{order.trackingNumber}</span>
+                                    </div>
+                                    <div>
+                                      <span className="font-medium">Delivery Address:</span>
+                                      <p className="text-muted-foreground mt-1">{order.deliveryAddress}</p>
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    ))}
+
+                    {orders.length === 0 && (
+                      <div className="text-center py-8">
+                        <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-lg font-medium mb-2">No orders yet</h3>
+                        <p className="text-muted-foreground">
+                          Start shopping to see your orders here
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end pt-4">
+                      <Button variant="outline" onClick={() => setShowOrders(false)}>
+                        Close
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Order Confirmation Modal */}
         <AnimatePresence>
           {showOrderConfirmation && currentOrder && (
@@ -882,7 +1565,6 @@ const GroceryMarketplace = () => {
                 className="w-full max-w-lg"
               >
                 <Card className="relative overflow-hidden">
-                  {/* Success Animation */}
                   <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-success via-success-foreground to-success"></div>
                   
                   <CardHeader className="text-center pb-4">
@@ -938,20 +1620,11 @@ const GroceryMarketplace = () => {
                           setCartItems([]);
                           toast({
                             title: "Order placed successfully!",
-                            description: "You can track your order in the Orders section.",
+                            description: "You can view your order in the Orders section.",
                           });
                         }}
                       >
                         Continue Shopping
-                      </Button>
-                      <Button 
-                        variant="outline"
-                        onClick={() => {
-                          setShowOrderConfirmation(false);
-                          // Navigate to orders page (will be implemented)
-                        }}
-                      >
-                        Track Order
                       </Button>
                     </div>
                   </CardContent>
@@ -960,25 +1633,6 @@ const GroceryMarketplace = () => {
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Empty State */}
-        {filteredProducts.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center py-12"
-          >
-            <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No products found</h3>
-            <p className="text-muted-foreground mb-4">
-              Try adjusting your search or browse different categories
-            </p>
-            <Button onClick={() => setShowAddProduct(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Be the first to sell
-            </Button>
-          </motion.div>
-        )}
       </div>
     </Layout>
   );

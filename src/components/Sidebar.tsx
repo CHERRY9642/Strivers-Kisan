@@ -75,18 +75,6 @@ const menuItems = [
     description: '🛒 Buy & sell produce'
   },
   {
-    title: 'Orders',
-    url: '/orders',
-    icon: Package,
-    description: '📦 Track your orders'
-  },
-  {
-    title: 'Artifacts',
-    url: '/artifacts',
-    icon: Package,
-    description: '🏺 Traditional tools'
-  },
-  {
     title: 'Profile',
     url: '/profile',
     icon: User,
