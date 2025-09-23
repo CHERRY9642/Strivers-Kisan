@@ -38,7 +38,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { useToast } from '@/components/ui/use-toast';
 import { ProductDetailModal } from '@/components/ProductDetailModal';
 import { ImageUpload } from '@/components/ImageUpload';
-import { useSupabase, type EnhancedProduct } from '@/hooks/useSupabase';
+import { useSupabase, type EnhancedProduct, type ProductImage } from '@/hooks/useSupabase';
 
 type MarketplaceMode = 'grocery' | 'artifacts';
 
@@ -60,8 +60,22 @@ interface Product {
   isOrganic: boolean;
 }
 
-interface CartItem extends EnhancedProduct {
+// Unified cart item interface
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
   cartQuantity: number;
+  type: 'product' | 'artifact';
+  // Product specific fields
+  unit?: string;
+  seller: string;
+  location: string;
+  images: ProductImage[] | string[];
+  description: string;
+  // Artifact specific fields
+  condition?: string;
+  category: string;
 }
 
 interface Artifact {
@@ -81,17 +95,14 @@ interface Artifact {
 
 interface Order {
   id: string;
-  items: Array<{
-    name: string;
-    quantity: number;
-    price: number;
-  }>;
+  items: CartItem[];
   totalAmount: number;
-  status: 'processing' | 'shipped' | 'out-for-delivery' | 'delivered';
+  status: 'confirmed' | 'processing' | 'shipped' | 'out-for-delivery' | 'delivered';
   orderDate: Date;
   deliveryDate?: Date;
   deliveryAddress: string;
-  trackingNumber: string;
+  paymentMethod: string;
+  type: 'grocery' | 'artifact' | 'mixed';
 }
 
 const GroceryMarketplace = () => {
@@ -127,7 +138,8 @@ const GroceryMarketplace = () => {
   const [productImages, setProductImages] = useState<File[]>([]);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [showOrderConfirmation, setShowOrderConfirmation] = useState(false);
-  const [currentOrder, setCurrentOrder] = useState<any>(null);
+  const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
+  const [userOrders, setUserOrders] = useState<Order[]>([]);
 
   // Artifacts states
   const [showAddArtifact, setShowAddArtifact] = useState(false);
@@ -264,31 +276,6 @@ const GroceryMarketplace = () => {
     }
   ]);
 
-  const [orders] = useState<Order[]>([
-    {
-      id: '1234567890',
-      items: [
-        { name: 'Fresh Tomatoes', quantity: 2, price: 45 },
-        { name: 'Organic Onions', quantity: 1, price: 32 }
-      ],
-      totalAmount: 122,
-      status: 'out-for-delivery',
-      orderDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      deliveryAddress: 'HSR Layout, Bangalore, Karnataka',
-      trackingNumber: 'TRK001234'
-    },
-    {
-      id: '1234567891',
-      items: [
-        { name: 'Basmati Rice', quantity: 1, price: 85 }
-      ],
-      totalAmount: 85,
-      status: 'delivered',
-      orderDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      deliveryAddress: 'Koramangala, Bangalore, Karnataka',
-      trackingNumber: 'TRK001235'
-    }
-  ]);
 
   // Categories
   const groceryCategories = [
@@ -438,19 +425,48 @@ const GroceryMarketplace = () => {
     }
   };
 
-  const addToCart = (product: EnhancedProduct) => {
+  // Helper function to get image URL
+  const getImageUrl = (images: ProductImage[] | string[]): string => {
+    if (Array.isArray(images) && images.length > 0) {
+      return typeof images[0] === 'string' ? images[0] : images[0].url || '📦';
+    }
+    return '📦';
+  };
+
+  // Unified cart functions
+  const addToCart = (item: EnhancedProduct | Artifact, type?: 'product' | 'artifact') => {
+    // Determine type if not provided (for backward compatibility with ProductDetailModal)
+    const itemType = type || ('unit' in item ? 'product' : 'artifact');
+    
     setCartItems(prevItems => {
-      const existingItem = prevItems.find(item => item.id === product.id);
+      const existingItem = prevItems.find(cartItem => cartItem.id === item.id && cartItem.type === itemType);
       if (existingItem) {
-        return prevItems.map(item =>
-          item.id === product.id ? { ...item, cartQuantity: item.cartQuantity + 1 } : item
+        return prevItems.map(cartItem =>
+          cartItem.id === item.id && cartItem.type === itemType 
+            ? { ...cartItem, cartQuantity: cartItem.cartQuantity + 1 } 
+            : cartItem
         );
       } else {
+        const cartItem: CartItem = {
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          cartQuantity: 1,
+          type: itemType,
+          seller: item.seller,
+          location: item.location,
+          images: item.images,
+          description: item.description,
+          category: item.category,
+          ...(itemType === 'product' && 'unit' in item && { unit: item.unit }),
+          ...(itemType === 'artifact' && 'condition' in item && { condition: item.condition }),
+        };
+        
         toast({
           title: "Added to cart",
-          description: `${product.name} has been added to your cart.`,
+          description: `${item.name} has been added to your cart.`,
         });
-        return [...prevItems, { ...product, cartQuantity: 1 }];
+        return [...prevItems, cartItem];
       }
     });
   };
@@ -498,16 +514,29 @@ const GroceryMarketplace = () => {
     const orderId = Date.now().toString();
     const totalAmount = cartItems.reduce((total, item) => total + (item.price * item.cartQuantity), 0);
     
-    const order = {
+    // Determine order type
+    const hasProducts = cartItems.some(item => item.type === 'product');
+    const hasArtifacts = cartItems.some(item => item.type === 'artifact');
+    let orderType: 'grocery' | 'artifact' | 'mixed' = 'grocery';
+    if (hasProducts && hasArtifacts) {
+      orderType = 'mixed';
+    } else if (hasArtifacts) {
+      orderType = 'artifact';
+    }
+    
+    const order: Order = {
       id: orderId,
-      items: cartItems,
+      items: [...cartItems],
       totalAmount,
       status: 'confirmed',
       orderDate: new Date(),
       deliveryAddress: 'Your Address, City, State', // Mock address
-      paymentMethod: 'Cash on Delivery'
+      paymentMethod: 'Cash on Delivery',
+      type: orderType
     };
     
+    // Add to user orders
+    setUserOrders(prevOrders => [order, ...prevOrders]);
     setCurrentOrder(order);
     setShowOrderConfirmation(true);
     setShowCart(false);
@@ -652,7 +681,7 @@ const GroceryMarketplace = () => {
                 <div className="flex space-x-2">
                   <Button onClick={() => setShowOrders(true)} variant="outline">
                     <Package className="h-4 w-4 mr-2" />
-                    Orders ({orders.length})
+                    Orders ({userOrders.length})
                   </Button>
                   
                   <Button
@@ -685,13 +714,20 @@ const GroceryMarketplace = () => {
                           <div className="space-y-3">
                             {cartItems.map(item => (
                               <div key={item.id} className="flex items-center justify-between">
-                                <div className="flex items-center space-x-2">
-                                  <span className="text-2xl">{item.images[0]?.url || '📦'}</span>
-                                  <div>
-                                    <p className="font-medium">{item.name}</p>
-                                    <p className="text-sm text-muted-foreground">₹{item.price}/{item.unit}</p>
-                                  </div>
+                              <div className="flex items-center space-x-2">
+                                <span className="text-2xl">
+                                  {getImageUrl(item.images)}
+                                </span>
+                                <div>
+                                  <p className="font-medium">{item.name}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    ₹{item.price}{item.unit ? `/${item.unit}` : ''}
+                                  </p>
+                                  <Badge variant="outline" className="text-xs">
+                                    {item.type === 'product' ? 'Grocery' : 'Artifact'}
+                                  </Badge>
                                 </div>
+                              </div>
                                 <div className="flex items-center space-x-2">
                                   <Button size="sm" variant="outline" onClick={() => updateCartQuantity(item.id, item.cartQuantity - 1)}>-</Button>
                                   <span>{item.cartQuantity}</span>
@@ -816,10 +852,10 @@ const GroceryMarketplace = () => {
                               </div>
 
                               <div className="flex space-x-2 pt-2">
-                                <Button className="flex-1" size="sm" onClick={() => addToCart(product)}>
-                                  <ShoppingCart className="h-4 w-4 mr-2" />
-                                  Buy Now
-                                </Button>
+                              <Button className="flex-1" size="sm" onClick={() => addToCart(product, 'product')}>
+                                <ShoppingCart className="h-4 w-4 mr-2" />
+                                Add to Cart
+                              </Button>
                                 <Button 
                                   variant="outline" 
                                   size="sm"
@@ -887,10 +923,10 @@ const GroceryMarketplace = () => {
                                     {product.quantity} {product.unit} available
                                   </div>
                                   <div className="flex space-x-2 mt-2">
-                                    <Button size="sm" onClick={() => addToCart(product)}>
-                                      <ShoppingCart className="h-4 w-4 mr-1" />
-                                      Buy
-                                    </Button>
+                                  <Button size="sm" onClick={() => addToCart(product, 'product')}>
+                                    <ShoppingCart className="h-4 w-4 mr-1" />
+                                    Add to Cart
+                                  </Button>
                                     <Button 
                                       variant="outline" 
                                       size="sm"
@@ -960,7 +996,7 @@ const GroceryMarketplace = () => {
               exit={{ opacity: 0, x: -20 }}
               className="space-y-6"
             >
-              {/* Search and Add Button */}
+              {/* Search and Controls for Artifacts */}
               <div className="flex flex-col md:flex-row gap-4 items-center">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -971,10 +1007,81 @@ const GroceryMarketplace = () => {
                     className="pl-10"
                   />
                 </div>
-                <Button onClick={() => setShowAddArtifact(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  List Artifact
-                </Button>
+                
+                <div className="flex space-x-2">
+                  <Button onClick={() => setShowOrders(true)} variant="outline">
+                    <Package className="h-4 w-4 mr-2" />
+                    Orders ({userOrders.length})
+                  </Button>
+                  
+                  <Button onClick={() => setShowAddArtifact(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    List Artifact
+                  </Button>
+                  
+                  <Dialog open={showCart} onOpenChange={setShowCart}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="relative">
+                        <ShoppingCart className="h-4 w-4" />
+                        {cartItems.length > 0 && (
+                          <Badge className="absolute -top-2 -right-2 px-2 py-1 text-xs rounded-full bg-primary text-primary-foreground">
+                            {cartItems.reduce((total, item) => total + item.cartQuantity, 0)}
+                          </Badge>
+                        )}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>{translateSync('Your Cart')}</DialogTitle>
+                      </DialogHeader>
+                      <div className="py-4 space-y-4">
+                        {cartItems.length === 0 ? (
+                          <p className="text-center text-muted-foreground">{translateSync('Your cart is empty.')}</p>
+                        ) : (
+                          <div className="space-y-3">
+                        {cartItems.map(item => (
+                          <div key={`${item.id}-${item.type}`} className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-2xl">
+                                {getImageUrl(item.images)}
+                              </span>
+                              <div>
+                                <p className="font-medium">{item.name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  ₹{item.price}{item.unit ? `/${item.unit}` : ''}
+                                </p>
+                                <Badge variant="outline" className="text-xs">
+                                  {item.type === 'product' ? 'Grocery' : 'Artifact'}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Button size="sm" variant="outline" onClick={() => updateCartQuantity(item.id, item.cartQuantity - 1)}>-</Button>
+                              <span>{item.cartQuantity}</span>
+                              <Button size="sm" variant="outline" onClick={() => updateCartQuantity(item.id, item.cartQuantity + 1)}>+</Button>
+                              <Button size="sm" variant="destructive" onClick={() => removeFromCart(item.id)}>
+                                <XCircle className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                          </div>
+                        )}
+                      </div>
+                      {cartItems.length > 0 && (
+                        <DialogFooter className="flex flex-col sm:flex-col sm:space-x-0 sm:space-y-2">
+                          <div className="flex justify-between items-center font-bold text-lg">
+                            <span>{translateSync('Total:')}</span>
+                            <span>₹{cartItems.reduce((total, item) => total + (item.price * item.cartQuantity), 0).toFixed(2)}</span>
+                          </div>
+                          <Button className="w-full" onClick={handleProceedToPayment}>
+                            {translateSync('Proceed to Payment')}
+                          </Button>
+                        </DialogFooter>
+                      )}
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
 
               {/* Artifact Categories */}
@@ -1053,9 +1160,9 @@ const GroceryMarketplace = () => {
                           </div>
 
                           <div className="flex space-x-2 pt-2">
-                            <Button className="flex-1" size="sm">
+                            <Button className="flex-1" size="sm" onClick={() => addToCart(artifact, 'artifact')}>
                               <ShoppingCart className="h-4 w-4 mr-2" />
-                              Buy Now
+                              Add to Cart
                             </Button>
                             <Button variant="outline" size="sm">
                               <Eye className="h-4 w-4" />
@@ -1426,7 +1533,7 @@ const GroceryMarketplace = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {orders.map((order, index) => (
+                    {userOrders.map((order, index) => (
                       <motion.div
                         key={order.id}
                         initial={{ opacity: 0, scale: 0.95 }}
@@ -1437,7 +1544,12 @@ const GroceryMarketplace = () => {
                           <CardHeader className="pb-3">
                             <div className="flex justify-between items-start">
                               <div>
-                                <CardTitle className="text-lg">Order #{order.id}</CardTitle>
+                                <CardTitle className="text-lg flex items-center space-x-2">
+                                  <span>Order #{order.id}</span>
+                                  <Badge variant="outline" className="capitalize">
+                                    {order.type}
+                                  </Badge>
+                                </CardTitle>
                                 <div className="flex items-center space-x-4 mt-1 text-sm text-muted-foreground">
                                   <div className="flex items-center space-x-1">
                                     <Calendar className="h-3 w-3" />
@@ -1450,7 +1562,7 @@ const GroceryMarketplace = () => {
                                 </div>
                               </div>
                               <div className="text-right">
-                                <div className="text-xl font-bold text-primary">₹{order.totalAmount}</div>
+                                <div className="text-xl font-bold text-primary">₹{order.totalAmount.toFixed(2)}</div>
                                 <Badge className={`${getStatusColor(order.status)} text-white`}>
                                   {getStatusText(order.status)}
                                 </Badge>
@@ -1461,11 +1573,23 @@ const GroceryMarketplace = () => {
                           <CardContent className="space-y-4">
                             <div>
                               <h4 className="font-medium mb-2 text-sm">Items Ordered:</h4>
-                              <div className="space-y-1">
+                              <div className="space-y-2">
                                 {order.items.map((item, idx) => (
-                                  <div key={idx} className="flex justify-between text-sm text-muted-foreground">
-                                    <span>{item.name} x {item.quantity}</span>
-                                    <span>₹{(item.price * item.quantity).toFixed(2)}</span>
+                                  <div key={idx} className="flex justify-between items-center text-sm">
+                                  <div className="flex items-center space-x-2">
+                                    <span className="text-lg">
+                                      {getImageUrl(item.images)}
+                                    </span>
+                                    <div>
+                                      <span className="font-medium">{item.name} x {item.cartQuantity}</span>
+                                      <div className="flex items-center space-x-1">
+                                        <Badge variant="outline" className="text-xs">
+                                          {item.type === 'product' ? 'Grocery' : 'Artifact'}
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                  </div>
+                                    <span className="font-medium">₹{(item.price * item.cartQuantity).toFixed(2)}</span>
                                   </div>
                                 ))}
                               </div>
@@ -1504,16 +1628,22 @@ const GroceryMarketplace = () => {
                                       <span className="font-medium">Order Date:</span>
                                       <span>{formatDate(order.orderDate)}</span>
                                     </div>
+                                    <div className="flex justify-between">
+                                      <span className="font-medium">Payment Method:</span>
+                                      <span>{order.paymentMethod}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="font-medium">Order Type:</span>
+                                      <Badge variant="outline" className="capitalize">
+                                        {order.type}
+                                      </Badge>
+                                    </div>
                                     {order.deliveryDate && (
                                       <div className="flex justify-between">
                                         <span className="font-medium">Delivered On:</span>
                                         <span className="text-success">{formatDate(order.deliveryDate)}</span>
                                       </div>
                                     )}
-                                    <div className="flex justify-between">
-                                      <span className="font-medium">Tracking Number:</span>
-                                      <span className="font-mono">{order.trackingNumber}</span>
-                                    </div>
                                     <div>
                                       <span className="font-medium">Delivery Address:</span>
                                       <p className="text-muted-foreground mt-1">{order.deliveryAddress}</p>
@@ -1527,7 +1657,7 @@ const GroceryMarketplace = () => {
                       </motion.div>
                     ))}
 
-                    {orders.length === 0 && (
+                    {userOrders.length === 0 && (
                       <div className="text-center py-8">
                         <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                         <h3 className="text-lg font-medium mb-2">No orders yet</h3>
@@ -1604,8 +1734,20 @@ const GroceryMarketplace = () => {
                       <h4 className="font-medium mb-2">Order Items:</h4>
                       <div className="space-y-2">
                         {currentOrder.items.map((item: CartItem) => (
-                          <div key={item.id} className="flex justify-between items-center text-sm">
-                            <span>{item.name} x {item.cartQuantity}</span>
+                          <div key={`${item.id}-${item.type}`} className="flex justify-between items-center text-sm">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-lg">
+                                {getImageUrl(item.images)}
+                              </span>
+                              <div>
+                                <span className="font-medium">{item.name} x {item.cartQuantity}</span>
+                                <div>
+                                  <Badge variant="outline" className="text-xs">
+                                    {item.type === 'product' ? 'Grocery' : 'Artifact'}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
                             <span>₹{(item.price * item.cartQuantity).toFixed(2)}</span>
                           </div>
                         ))}
