@@ -1,0 +1,713 @@
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Layout } from '@/components/Layout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useWeather } from '@/hooks/useWeather';
+import { useToast } from '@/components/ui/use-toast';
+import { 
+  ShoppingCart,
+  Plus,
+  Search,
+  MapPin,
+  Star,
+  Clock,
+  User,
+  Phone,
+  Package,
+  Truck,
+  CheckCircle,
+  Calendar,
+  Filter,
+  Grid,
+  List,
+  Heart,
+  MessageCircle,
+  XCircle,
+  Eye,
+  Camera,
+  ShoppingBag,
+  Leaf,
+  Beaker,
+  Zap,
+  RefreshCw,
+  AlertCircle,
+  TrendingUp,
+  Sun,
+  Wind,
+  Thermometer,
+  Droplets,
+  CloudRain
+} from 'lucide-react';
+
+type RecommendationMode = 'recommendation' | 'scheduling';
+
+interface SoilData {
+  nitrogen: string;
+  phosphorus: string;
+  potassium: string;
+  pH: string;
+}
+
+interface LocationData {
+  latitude: number;
+  longitude: number;
+  city: string;
+  country: string;
+}
+
+interface CropRecommendation {
+  name: string;
+  suitability: number;
+  season: string;
+  description: string;
+  requirements: string[];
+  expectedYield: string;
+  duration: string;
+}
+
+interface ScheduleItem {
+  id: string;
+  crop: string;
+  plantingDate: string;
+  harvestDate: string;
+  status: 'planned' | 'planted' | 'growing' | 'harvested';
+  notes: string;
+}
+
+const CropRecommendation = () => {
+  const { translateSync } = useLanguage();
+  const { weatherData, loading: weatherLoading, error: weatherError } = useWeather();
+  const { toast } = useToast();
+  
+  const [activeMode, setActiveMode] = useState<RecommendationMode>('recommendation');
+  const [soilData, setSoilData] = useState<SoilData>({
+    nitrogen: '',
+    phosphorus: '',
+    potassium: '',
+    pH: ''
+  });
+  const [selectedSeason, setSelectedSeason] = useState<string>('');
+  const [locationData, setLocationData] = useState<LocationData | null>(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [customLocation, setCustomLocation] = useState('');
+  const [useCurrentLocation, setUseCurrentLocation] = useState(true);
+  const [recommendations, setRecommendations] = useState<CropRecommendation[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
+  const [newScheduleItem, setNewScheduleItem] = useState({
+    crop: '',
+    plantingDate: '',
+    harvestDate: '',
+    notes: ''
+  });
+
+  // Get user's current location
+  const getCurrentLocation = async () => {
+    if (!navigator.geolocation) {
+      toast({
+        title: "Geolocation not supported",
+        description: "Please enter your location manually",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLocationLoading(true);
+    
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        try {
+          // Use a geocoding service to get location name
+          const response = await fetch(
+            `https://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=${import.meta.env.VITE_OPENWEATHER_API_KEY || 'demo'}`
+          );
+          const data = await response.json();
+          
+          if (data.length > 0) {
+            setLocationData({
+              latitude,
+              longitude,
+              city: data[0].name,
+              country: data[0].country
+            });
+          } else {
+            setLocationData({
+              latitude,
+              longitude,
+              city: 'Unknown',
+              country: 'Unknown'
+            });
+          }
+        } catch (error) {
+          console.error('Error getting location name:', error);
+          setLocationData({
+            latitude,
+            longitude,
+            city: 'Unknown',
+            country: 'Unknown'
+          });
+        } finally {
+          setLocationLoading(false);
+        }
+      },
+      (error) => {
+        console.error('Error getting location:', error);
+        setLocationLoading(false);
+        toast({
+          title: "Location access denied",
+          description: "Please enter your location manually",
+          variant: "destructive"
+        });
+      }
+    );
+  };
+
+  // Mock crop recommendation logic
+  const generateRecommendations = () => {
+    if (!soilData.nitrogen || !soilData.phosphorus || !soilData.potassium || !soilData.pH || !selectedSeason) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all soil parameters and select a season",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      const mockRecommendations: CropRecommendation[] = [
+        {
+          name: "Tomato",
+          suitability: 95,
+          season: selectedSeason,
+          description: "Excellent choice for your soil conditions and climate",
+          requirements: ["Well-drained soil", "6-8 hours sunlight", "Regular watering"],
+          expectedYield: "4-6 kg per plant",
+          duration: "70-80 days"
+        },
+        {
+          name: "Corn",
+          suitability: 88,
+          season: selectedSeason,
+          description: "Good match with high nitrogen requirements",
+          requirements: ["Rich nitrogen soil", "Full sun", "Deep watering"],
+          expectedYield: "2-3 ears per plant", 
+          duration: "90-100 days"
+        },
+        {
+          name: "Beans",
+          suitability: 82,
+          season: selectedSeason,
+          description: "Naturally fixes nitrogen, good for soil health",
+          requirements: ["Moderate water", "Support structures", "Well-drained soil"],
+          expectedYield: "200-300g per plant",
+          duration: "50-60 days"
+        }
+      ];
+      
+      setRecommendations(mockRecommendations);
+      setLoading(false);
+      
+      toast({
+        title: "Recommendations generated",
+        description: `Found ${mockRecommendations.length} suitable crops for your conditions`
+      });
+    }, 2000);
+  };
+
+  const addScheduleItem = () => {
+    if (!newScheduleItem.crop || !newScheduleItem.plantingDate || !newScheduleItem.harvestDate) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const item: ScheduleItem = {
+      id: Date.now().toString(),
+      ...newScheduleItem,
+      status: 'planned'
+    };
+
+    setScheduleItems([...scheduleItems, item]);
+    setNewScheduleItem({
+      crop: '',
+      plantingDate: '',
+      harvestDate: '',
+      notes: ''
+    });
+
+    toast({
+      title: "Schedule item added",
+      description: `${newScheduleItem.crop} has been added to your schedule`
+    });
+  };
+
+  const updateScheduleStatus = (id: string, status: ScheduleItem['status']) => {
+    setScheduleItems(scheduleItems.map(item => 
+      item.id === id ? { ...item, status } : item
+    ));
+
+    toast({
+      title: "Status updated",
+      description: `Schedule item status changed to ${status}`
+    });
+  };
+
+  useEffect(() => {
+    if (useCurrentLocation) {
+      getCurrentLocation();
+    }
+  }, [useCurrentLocation]);
+
+  const seasons = [
+    { value: 'spring', label: 'Spring (Mar-May)' },
+    { value: 'summer', label: 'Summer (Jun-Aug)' },
+    { value: 'autumn', label: 'Autumn (Sep-Nov)' },
+    { value: 'winter', label: 'Winter (Dec-Feb)' }
+  ];
+
+  const getSuitabilityColor = (suitability: number) => {
+    if (suitability >= 90) return 'bg-green-500';
+    if (suitability >= 75) return 'bg-blue-500';
+    if (suitability >= 60) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+
+  const getStatusColor = (status: ScheduleItem['status']) => {
+    switch (status) {
+      case 'planned': return 'bg-blue-500';
+      case 'planted': return 'bg-green-500';
+      case 'growing': return 'bg-yellow-500';
+      case 'harvested': return 'bg-purple-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  return (
+    <Layout>
+      <div className="space-y-6 p-4 md:p-8 bg-gradient-to-br from-green-50 to-blue-50 min-h-screen">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-8"
+        >
+          <h1 className="text-4xl font-bold text-green-700 mb-4 flex items-center justify-center gap-3">
+            <Leaf className="h-10 w-10" />
+            {translateSync('Crop Recommendation & Scheduling')}
+          </h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            {translateSync('Get personalized crop recommendations based on your soil conditions and plan your farming schedule')}
+          </p>
+        </motion.div>
+
+        {/* Navigation Tabs */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+        >
+          <Tabs value={activeMode} onValueChange={(mode) => setActiveMode(mode as RecommendationMode)} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="recommendation" className="text-lg font-medium">
+                <Search className="h-5 w-5 mr-2" />
+                Crop Recommendation
+              </TabsTrigger>
+              <TabsTrigger value="scheduling" className="text-lg font-medium">
+                <Calendar className="h-5 w-5 mr-2" />
+                Crop Scheduling
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Crop Recommendation Tab */}
+            <TabsContent value="recommendation" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Input Form */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Beaker className="h-6 w-6" />
+                      Soil & Environmental Data
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Soil Parameters */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="nitrogen">Nitrogen (N) %</Label>
+                        <Input
+                          id="nitrogen"
+                          type="number"
+                          step="0.1"
+                          value={soilData.nitrogen}
+                          onChange={(e) => setSoilData({...soilData, nitrogen: e.target.value})}
+                          placeholder="e.g., 1.2"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="phosphorus">Phosphorus (P) %</Label>
+                        <Input
+                          id="phosphorus"
+                          type="number"
+                          step="0.1"
+                          value={soilData.phosphorus}
+                          onChange={(e) => setSoilData({...soilData, phosphorus: e.target.value})}
+                          placeholder="e.g., 0.8"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="potassium">Potassium (K) %</Label>
+                        <Input
+                          id="potassium"
+                          type="number"
+                          step="0.1"
+                          value={soilData.potassium}
+                          onChange={(e) => setSoilData({...soilData, potassium: e.target.value})}
+                          placeholder="e.g., 2.1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="ph">pH Level</Label>
+                        <Input
+                          id="ph"
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="14"
+                          value={soilData.pH}
+                          onChange={(e) => setSoilData({...soilData, pH: e.target.value})}
+                          placeholder="e.g., 6.5"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Season Selection */}
+                    <div>
+                      <Label>Growing Season</Label>
+                      <Select value={selectedSeason} onValueChange={setSelectedSeason}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select growing season" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {seasons.map((season) => (
+                            <SelectItem key={season.value} value={season.value}>
+                              {season.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Location Section */}
+                    <div className="space-y-3">
+                      <Label className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        Location
+                      </Label>
+                      
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="useCurrentLocation"
+                          checked={useCurrentLocation}
+                          onChange={(e) => setUseCurrentLocation(e.target.checked)}
+                          className="rounded"
+                        />
+                        <Label htmlFor="useCurrentLocation">Use current location</Label>
+                      </div>
+
+                      {useCurrentLocation ? (
+                        <div className="flex items-center gap-2">
+                          <Button
+                            onClick={getCurrentLocation}
+                            disabled={locationLoading}
+                            variant="outline"
+                            size="sm"
+                          >
+                            {locationLoading ? (
+                              <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                            ) : (
+                              <MapPin className="h-4 w-4 mr-2" />
+                            )}
+                            Get Location
+                          </Button>
+                          {locationData && (
+                            <span className="text-sm text-gray-600">
+                              {locationData.city}, {locationData.country}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <Input
+                          placeholder="Enter city name"
+                          value={customLocation}
+                          onChange={(e) => setCustomLocation(e.target.value)}
+                        />
+                      )}
+                    </div>
+
+                    {/* Weather Info */}
+                    {weatherData && (
+                      <div className="bg-blue-50 p-3 rounded-lg">
+                        <Label className="flex items-center gap-2 mb-2">
+                          <CloudRain className="h-4 w-4" />
+                          Current Weather
+                        </Label>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div className="flex items-center gap-1">
+                            <Thermometer className="h-3 w-3" />
+                            {weatherData.current.temp}°C
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Droplets className="h-3 w-3" />
+                            {weatherData.current.humidity}%
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Wind className="h-3 w-3" />
+                            {weatherData.current.windSpeed} km/h
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Sun className="h-3 w-3" />
+                            {weatherData.current.condition}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <Button
+                      onClick={generateRecommendations}
+                      disabled={loading}
+                      className="w-full"
+                    >
+                      {loading ? (
+                        <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Search className="h-4 w-4 mr-2" />
+                      )}
+                      Generate Recommendations
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Recommendations Results */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="h-6 w-6" />
+                      Crop Recommendations
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {loading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <RefreshCw className="h-8 w-8 animate-spin text-green-600" />
+                        <span className="ml-2">Analyzing your data...</span>
+                      </div>
+                    ) : recommendations.length > 0 ? (
+                      <div className="space-y-4">
+                        {recommendations.map((crop, index) => (
+                          <motion.div
+                            key={crop.name}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                            className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                          >
+                            <div className="flex items-start justify-between mb-2">
+                              <h3 className="font-semibold text-lg">{crop.name}</h3>
+                              <Badge className={`${getSuitabilityColor(crop.suitability)} text-white`}>
+                                {crop.suitability}% Match
+                              </Badge>
+                            </div>
+                            <p className="text-gray-600 mb-3">{crop.description}</p>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <span className="font-medium">Expected Yield:</span>
+                                <p className="text-gray-600">{crop.expectedYield}</p>
+                              </div>
+                              <div>
+                                <span className="font-medium">Duration:</span>
+                                <p className="text-gray-600">{crop.duration}</p>
+                              </div>
+                            </div>
+                            <div className="mt-3">
+                              <span className="font-medium">Requirements:</span>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {crop.requirements.map((req, i) => (
+                                  <Badge key={i} variant="outline" className="text-xs">
+                                    {req}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <Leaf className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                        <p>Enter your soil data and generate recommendations to see results</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* Crop Scheduling Tab */}
+            <TabsContent value="scheduling" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Add Schedule Item */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Plus className="h-6 w-6" />
+                      Add to Schedule
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="scheduleCrop">Crop Name</Label>
+                      <Input
+                        id="scheduleCrop"
+                        value={newScheduleItem.crop}
+                        onChange={(e) => setNewScheduleItem({...newScheduleItem, crop: e.target.value})}
+                        placeholder="e.g., Tomato"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="plantingDate">Planting Date</Label>
+                      <Input
+                        id="plantingDate"
+                        type="date"
+                        value={newScheduleItem.plantingDate}
+                        onChange={(e) => setNewScheduleItem({...newScheduleItem, plantingDate: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="harvestDate">Expected Harvest Date</Label>
+                      <Input
+                        id="harvestDate"
+                        type="date"
+                        value={newScheduleItem.harvestDate}
+                        onChange={(e) => setNewScheduleItem({...newScheduleItem, harvestDate: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="notes">Notes</Label>
+                      <Input
+                        id="notes"
+                        value={newScheduleItem.notes}
+                        onChange={(e) => setNewScheduleItem({...newScheduleItem, notes: e.target.value})}
+                        placeholder="Optional notes"
+                      />
+                    </div>
+                    <Button onClick={addScheduleItem} className="w-full">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add to Schedule
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Schedule List */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Calendar className="h-6 w-6" />
+                      Crop Schedule
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {scheduleItems.length > 0 ? (
+                      <div className="space-y-3">
+                        {scheduleItems.map((item) => (
+                          <motion.div
+                            key={item.id}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="border rounded-lg p-3 hover:shadow-md transition-shadow"
+                          >
+                            <div className="flex items-start justify-between mb-2">
+                              <h3 className="font-semibold">{item.crop}</h3>
+                              <Badge className={`${getStatusColor(item.status)} text-white`}>
+                                {item.status}
+                              </Badge>
+                            </div>
+                            <div className="text-sm text-gray-600 space-y-1">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-3 w-3" />
+                                Plant: {new Date(item.plantingDate).toLocaleDateString()}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-3 w-3" />
+                                Harvest: {new Date(item.harvestDate).toLocaleDateString()}
+                              </div>
+                              {item.notes && (
+                                <p className="text-xs italic">{item.notes}</p>
+                              )}
+                            </div>
+                            <div className="flex gap-2 mt-3">
+                              {item.status === 'planned' && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => updateScheduleStatus(item.id, 'planted')}
+                                >
+                                  Mark Planted
+                                </Button>
+                              )}
+                              {item.status === 'planted' && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => updateScheduleStatus(item.id, 'growing')}
+                                >
+                                  Mark Growing
+                                </Button>
+                              )}
+                              {item.status === 'growing' && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => updateScheduleStatus(item.id, 'harvested')}
+                                >
+                                  Mark Harvested
+                                </Button>
+                              )}
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                        <p>No scheduled items yet. Add your first crop to get started!</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </motion.div>
+      </div>
+    </Layout>
+  );
+};
+
+export default CropRecommendation;

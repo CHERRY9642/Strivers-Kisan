@@ -9,6 +9,7 @@ import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
 import CropMonitor from "./pages/CropMonitor";
+import CropRecommendation from "./pages/CropRecommendation";
 import DiseaseDetector from "./pages/DiseaseDetector";
 import MarketTrends from "./pages/MarketTrends";
 import GovernmentSchemes from "./pages/GovernmentSchemes";
@@ -37,8 +38,9 @@ const App = () => (
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/crop-monitor" element={<CropMonitor />} />
-              <Route path="/disease-detector" element={<DiseaseDetector />} />
+          <Route path="/crop-monitor" element={<CropMonitor />} />
+          <Route path="/crop-recommendation" element={<CropRecommendation />} />
+          <Route path="/disease-detector" element={<DiseaseDetector />} />
               <Route path="/market-trends" element={<MarketTrends />} />
               <Route path="/government-schemes" element={<GovernmentSchemes />} />
               <Route path="/chatbot" element={<Chatbot />} />

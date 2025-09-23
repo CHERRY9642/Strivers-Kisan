@@ -39,6 +39,12 @@ const menuItems = [
     description: '🌾 Real-time monitoring'
   },
   {
+    title: 'Crop Recommendation',
+    url: '/crop-recommendation',
+    icon: TrendingUp,
+    description: '🌱 AI-powered suggestions'
+  },
+  {
     title: 'Disease Detector',
     url: '/disease-detector',
     icon: Bug,
