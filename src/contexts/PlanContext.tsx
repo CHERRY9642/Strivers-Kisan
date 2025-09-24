@@ -34,7 +34,8 @@ export const PlanProvider: React.FC<PlanProviderProps> = ({ children }) => {
       enterprise: ['crop-monitor', 'disease-detector', 'weather', 'market-trends', 'government-schemes', 'ai-assistant', 'grocery-marketplace', 'cold-storage', 'advanced-analytics']
     };
 
-    return featureAccess[currentPlan].includes(feature);
+    const planFeatures = featureAccess[currentPlan];
+    return planFeatures ? planFeatures.includes(feature) : false;
   };
 
   return (
