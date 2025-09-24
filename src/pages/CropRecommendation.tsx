@@ -101,11 +101,13 @@ const CropRecommendation = () => {
   const [recommendations, setRecommendations] = useState<CropRecommendation[]>([]);
   const [loading, setLoading] = useState(false);
   const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
+  const [selectedCrop, setSelectedCrop] = useState<ScheduleItem | null>(null);
   const [newScheduleItem, setNewScheduleItem] = useState({
     crop: '',
     plantingDate: '',
     harvestDate: '',
-    notes: ''
+    notes: '',
+    status: 'planned' as const
   });
 
   // Get user's current location
@@ -243,12 +245,13 @@ const CropRecommendation = () => {
     };
 
     setScheduleItems([...scheduleItems, item]);
-    setNewScheduleItem({
-      crop: '',
-      plantingDate: '',
-      harvestDate: '',
-      notes: ''
-    });
+      setNewScheduleItem({
+        crop: '',
+        plantingDate: '',
+        harvestDate: '',
+        notes: '',
+        status: 'planned' as const
+      });
 
     toast({
       title: "Schedule item added",
@@ -297,21 +300,106 @@ const CropRecommendation = () => {
     }
   };
 
+  // Get comprehensive crop plan data
+  const getCropPlan = (cropName: string) => {
+    const plans: Record<string, any> = {
+      wheat: {
+        timeline: [
+          { phase: 'Land Preparation', duration: '15-20 days', activity: 'Plowing, harrowing, leveling' },
+          { phase: 'Sowing', duration: '7-10 days', activity: 'Seed sowing with proper spacing' },
+          { phase: 'Germination', duration: '7-14 days', activity: 'Watering and monitoring' },
+          { phase: 'Tillering', duration: '30-45 days', activity: 'First fertilizer application' },
+          { phase: 'Flowering', duration: '20-25 days', activity: 'Disease monitoring' },
+          { phase: 'Maturity', duration: '30-35 days', activity: 'Final irrigation stop' },
+          { phase: 'Harvesting', duration: '7-10 days', activity: 'Combine harvesting' }
+        ],
+        treatments: [
+          { type: 'Basal Fertilizer', timing: 'At sowing', application: 'NPK 120:60:40 kg/hectare' },
+          { type: 'Top Dressing', timing: '21 days after sowing', application: 'Urea 65 kg/hectare' },
+          { type: 'Second Top Dressing', timing: '45 days after sowing', application: 'Urea 65 kg/hectare' },
+          { type: 'Fungicide', timing: 'Flowering stage', application: 'Tebuconazole 250 ml/hectare' },
+          { type: 'Weedicide', timing: '20-25 days after sowing', application: '2,4-D Sodium salt 500g/hectare' }
+        ],
+        yield: '40-45 Q/Ha',
+        revenue: '₹80,000-₹90,000/Ha',
+        tips: [
+          'Maintain soil moisture during critical growth stages',
+          'Monitor for aphids and rust diseases regularly',
+          'Harvest when moisture content is 12-14%',
+          'Store in well-ventilated areas to prevent fungal growth'
+        ]
+      },
+      rice: {
+        timeline: [
+          { phase: 'Nursery Preparation', duration: '25-30 days', activity: 'Seed bed preparation and sowing' },
+          { phase: 'Land Preparation', duration: '15 days', activity: 'Puddling and leveling' },
+          { phase: 'Transplanting', duration: '5-7 days', activity: '2-3 seedlings per hill' },
+          { phase: 'Vegetative Growth', duration: '60 days', activity: 'Regular irrigation and fertilization' },
+          { phase: 'Reproductive Phase', duration: '35 days', activity: 'Panicle initiation to flowering' },
+          { phase: 'Maturity', duration: '20-25 days', activity: 'Grain filling and hardening' },
+          { phase: 'Harvesting', duration: '7 days', activity: 'Manual or mechanical harvesting' }
+        ],
+        treatments: [
+          { type: 'Basal Fertilizer', timing: 'Before transplanting', application: 'NPK 120:60:40 kg/hectare' },
+          { type: 'First Top Dressing', timing: '21 days after transplanting', application: 'Urea 65 kg/hectare' },
+          { type: 'Second Top Dressing', timing: 'Panicle initiation', application: 'Urea 65 kg/hectare' },
+          { type: 'Insecticide', timing: 'Vegetative stage', application: 'Chlorpyrifos 2.5 ml/liter' },
+          { type: 'Fungicide', timing: 'Flowering', application: 'Tricyclazole 0.6g/liter' }
+        ],
+        yield: '60-70 Q/Ha',
+        revenue: '₹1,20,000-₹1,40,000/Ha',
+        tips: [
+          'Maintain 2-5 cm water level throughout growth',
+          'Control weeds within first 45 days',
+          'Apply zinc sulfate if deficiency symptoms appear',
+          'Harvest at 80% grain maturity for better quality'
+        ]
+      },
+      tomato: {
+        timeline: [
+          { phase: 'Nursery', duration: '25-30 days', activity: 'Seed sowing in protected conditions' },
+          { phase: 'Land Preparation', duration: '10 days', activity: 'Deep plowing and bed formation' },
+          { phase: 'Transplanting', duration: '3-5 days', activity: 'Evening transplanting preferred' },
+          { phase: 'Vegetative Growth', duration: '30-40 days', activity: 'Staking and pruning' },
+          { phase: 'Flowering', duration: '20-25 days', activity: 'Pollination support' },
+          { phase: 'Fruit Development', duration: '40-50 days', activity: 'Regular harvesting' },
+          { phase: 'Final Harvest', duration: '15 days', activity: 'Complete fruit picking' }
+        ],
+        treatments: [
+          { type: 'Organic Manure', timing: 'Land preparation', application: '25-30 tonnes FYM/hectare' },
+          { type: 'Basal Fertilizer', timing: 'At transplanting', application: 'NPK 120:80:80 kg/hectare' },
+          { type: 'Weekly Fertigation', timing: 'After flowering', application: '19:19:19 @ 5g/liter' },
+          { type: 'Fungicide Spray', timing: 'Preventive weekly', application: 'Mancozeb 2g/liter' },
+          { type: 'Fruit Borer Control', timing: 'Fruiting stage', application: 'Spinosad 0.5ml/liter' }
+        ],
+        yield: '500-600 Q/Ha',
+        revenue: '₹3,00,000-₹4,50,000/Ha',
+        tips: [
+          'Provide support stakes within 15 days of transplanting',
+          'Remove suckers regularly to improve fruit quality',
+          'Harvest fruits at breaker stage for better shelf life',
+          'Maintain proper spacing for air circulation'
+        ]
+      }
+    };
+    return plans[cropName] || plans.wheat;
+  };
+
   return (
     <Layout>
-      <div className="space-y-6 p-4 md:p-8 bg-gradient-to-br from-green-50 to-blue-50 min-h-screen">
+      <div className="space-y-4 md:space-y-6 p-2 md:p-4 lg:p-8 bg-gradient-to-br from-green-50 to-blue-50 min-h-screen">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-8"
+          className="text-center mb-6 md:mb-8"
         >
-          <h1 className="text-4xl font-bold text-green-700 mb-4 flex items-center justify-center gap-3">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-green-700 mb-2 md:mb-4 flex items-center justify-center gap-2 md:gap-3">
             <Leaf className="h-10 w-10" />
             {translateSync('Crop Recommendation & Scheduling')}
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-sm md:text-lg text-gray-600 max-w-2xl mx-auto px-4">
             {translateSync('Get personalized crop recommendations based on your soil conditions and plan your farming schedule')}
           </p>
         </motion.div>

@@ -45,11 +45,30 @@ interface Crop {
 
 const crops: Crop[] = [
   {
+    id: 'wheat',
+    name: 'Wheat',
+    image: '/src/assets/commodities/wheat.jpg',
+    diseases: [
+      { name: 'Leaf Rust', image: riceBlightImage, description: 'Orange-red pustules on leaf surfaces' },
+      { name: 'Powdery Mildew', image: tomatoBlightImage, description: 'White powdery coating on leaves' }
+    ]
+  },
+  {
     id: 'rice',
     name: 'Rice',
     image: riceImage,
     diseases: [
-      { name: 'Bacterial Leaf Blight', image: riceBlightImage, description: 'Yellow to brown streaks on leaves' }
+      { name: 'Bacterial Leaf Blight', image: riceBlightImage, description: 'Yellow to brown streaks on leaves' },
+      { name: 'Brown Spot', image: cornSpotImage, description: 'Dark brown spots with lighter centers' }
+    ]
+  },
+  {
+    id: 'sugarcane',
+    name: 'Sugarcane',
+    image: cornImage,
+    diseases: [
+      { name: 'Red Rot', image: tomatoBlightImage, description: 'Reddish discoloration in stem' },
+      { name: 'Smut Disease', image: cornSpotImage, description: 'Black spore masses on shoots' }
     ]
   },
   {
@@ -57,48 +76,18 @@ const crops: Crop[] = [
     name: 'Cotton',
     image: cottonImage,
     diseases: [
-      { name: 'Bollworm Infestation', image: cottonBollwormImage, description: 'Holes and damage in cotton bolls' }
+      { name: 'Bollworm Infestation', image: cottonBollwormImage, description: 'Holes and damage in cotton bolls' },
+      { name: 'Leaf Curl Virus', image: riceBlightImage, description: 'Curling and yellowing of leaves' }
     ]
   },
   {
-    id: 'hotpepper',
-    name: 'Hot Pepper',
-    image: hotpepperImage,
-    diseases: []
-  },
-  {
-    id: 'corn',
-    name: 'Corn',
-    image: cornImage,
+    id: 'pulses',
+    name: 'Pulses',
+    image: '/src/assets/commodities/beans.jpg',
     diseases: [
-      { name: 'Leaf Spot Disease', image: cornSpotImage, description: 'Circular brown spots on leaves' }
+      { name: 'Pod Borer', image: cottonBollwormImage, description: 'Damage to developing pods' },
+      { name: 'Wilt Disease', image: tomatoBlightImage, description: 'Wilting and yellowing of plants' }
     ]
-  },
-  {
-    id: 'tomato',
-    name: 'Tomato',
-    image: tomatoImage,
-    diseases: [
-      { name: 'Late Blight', image: tomatoBlightImage, description: 'Dark spots with white fuzzy growth' }
-    ]
-  },
-  {
-    id: 'onion',
-    name: 'Onion',
-    image: onionImage,
-    diseases: []
-  },
-  {
-    id: 'potato',
-    name: 'Potato',
-    image: potatoImage,
-    diseases: []
-  },
-  {
-    id: 'grapes',
-    name: 'Grapes',
-    image: grapesImage,
-    diseases: []
   }
 ];
 

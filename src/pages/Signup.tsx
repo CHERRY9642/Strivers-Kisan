@@ -21,6 +21,7 @@ const signupSchema = z.object({
   phone: z.string().min(10, 'Phone number must be at least 10 digits'),
   language: z.string().min(1, 'Please select a language'),
   plan: z.string().min(1, 'Please select a plan'),
+  role: z.string().min(1, 'Please select a role'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -261,6 +262,44 @@ const Signup = () => {
                                   </div>
                                 </SelectItem>
                               ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="role"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{translateSync("User Role")}</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="h-12">
+                                <SelectValue placeholder={translateSync("Select your role")} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="farmer">
+                                <div className="flex items-center gap-2">
+                                  <span>🚜</span>
+                                  <span>{translateSync("Farmer")}</span>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="artifact_seller">
+                                <div className="flex items-center gap-2">
+                                  <span>🏺</span>
+                                  <span>{translateSync("Artifact Seller")}</span>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="administrator">
+                                <div className="flex items-center gap-2">
+                                  <span>👨‍💼</span>
+                                  <span>{translateSync("Administrator")}</span>
+                                </div>
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />

@@ -161,13 +161,20 @@ const Settings = () => {
                         FK
                       </AvatarFallback>
                     </Avatar>
-                    <div className="space-y-2">
-                      <h3 className="text-lg font-semibold">{settings.profile.name}</h3>
-                      <div className="flex space-x-2">
-                        <Badge variant="secondary">{settings.profile.farmSize}</Badge>
-                        <Badge variant="outline">{settings.profile.mainCrops}</Badge>
-                      </div>
-                    </div>
+                     <div className="space-y-2">
+                       <h3 className="text-lg font-semibold">{settings.profile.name}</h3>
+                       <div className="flex space-x-2">
+                         <Badge variant="secondary">{settings.profile.farmSize}</Badge>
+                         <Badge variant="outline">{settings.profile.mainCrops}</Badge>
+                         {currentUser?.role && (
+                           <Badge variant="outline" className="bg-primary/10 text-primary">
+                             {currentUser.role === 'farmer' ? '🚜 Farmer' : 
+                              currentUser.role === 'artifact_seller' ? '🏺 Artifact Seller' :
+                              currentUser.role === 'administrator' ? '👨‍💼 Administrator' : 'User'}
+                           </Badge>
+                         )}
+                       </div>
+                     </div>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

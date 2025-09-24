@@ -144,7 +144,7 @@ const MarketTrends = () => {
           </p>
         </motion.div>
 
-        <div className="px-4 pb-6 space-y-6">
+        <div className="px-2 md:px-4 pb-6 space-y-4 md:space-y-6">
           {/* Commodity Selection */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -157,27 +157,27 @@ const MarketTrends = () => {
               </CardHeader>
               <CardContent>
                 <ScrollArea className="w-full">
-                  <div className="flex gap-3 pb-2">
+                  <div className="flex gap-2 md:gap-3 pb-2">
                     {commodities.map((commodity) => (
                       <motion.div
                         key={commodity.id}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        className={`flex-shrink-0 cursor-pointer p-3 rounded-lg border-2 transition-all duration-300 ${
+                        className={`flex-shrink-0 cursor-pointer p-2 md:p-3 rounded-lg border-2 transition-all duration-300 ${
                           selectedCommodity === commodity.id
                             ? 'border-primary bg-primary/10 shadow-lg'
                             : 'border-border hover:border-accent hover:bg-accent/5'
                         }`}
                         onClick={() => setSelectedCommodity(commodity.id)}
                       >
-                        <div className="text-center w-20">
+                        <div className="text-center w-16 md:w-20">
                           <img
                             src={commodity.image}
                             alt={commodity.name}
-                            className="w-12 h-12 object-cover rounded-full mx-auto mb-2 border-2 border-background shadow-sm"
+                            className="w-8 h-8 md:w-12 md:h-12 object-cover rounded-full mx-auto mb-1 md:mb-2 border-2 border-background shadow-sm"
                           />
-                          <p className="text-xs font-medium">{commodity.name}</p>
-                          <p className="text-xs text-muted-foreground">{commodity.category}</p>
+                          <p className="text-xs font-medium truncate">{commodity.name}</p>
+                          <p className="text-xs text-muted-foreground truncate hidden md:block">{commodity.category}</p>
                         </div>
                       </motion.div>
                     ))}

@@ -303,6 +303,15 @@ const Profile = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{translateSync("Role")}</span>
+                  <Badge variant="outline" className="bg-primary/10 text-primary">
+                    {currentUser.role === 'farmer' ? '🚜 Farmer' : 
+                     currentUser.role === 'artifact_seller' ? '🏺 Artifact Seller' :
+                     currentUser.role === 'administrator' ? '👨‍💼 Administrator' : 'User'}
+                  </Badge>
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">{translateSync("Member Since")}</span>
                   <span>{new Date(currentUser.createdAt).toLocaleDateString()}</span>
                 </div>
