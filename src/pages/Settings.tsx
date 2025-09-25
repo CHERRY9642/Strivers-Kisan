@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, Variants } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useToast } from "@/components/ui/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -23,12 +22,12 @@ import {
   Palette,
   Save,
   Volume2,
-  Smartphone,
-  Shield
 } from 'lucide-react';
+import { useLocation } from '@/contexts/LocationContext';
 
 const Settings = () => {
   const { translateSync } = useLanguage();
+  const { location, setLocation } = useLocation();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [settings, setSettings] = useState({
     language: 'kannada',
@@ -43,19 +42,17 @@ const Settings = () => {
       language: 'kannada',
       speed: 'normal'
     },
-    location: {
-      autoDetect: true,
-      city: 'Bangalore',
-      state: 'Karnataka'
-    },
     profile: {
       name: 'Farmer Krishna',
       farmSize: '5 acres',
       mainCrops: 'Rice, Tomato',
       email: '',
-      phone: ''
+      phone: '',
+      state: '',
+      district: ''
     },
-    theme: 'light'
+    theme: 'light',
+    autoDetectLocation: true,
   });
 
   useEffect(() => {
@@ -69,9 +66,14 @@ const Settings = () => {
           farmSize: user.farmSize || '5 acres',
           mainCrops: user.mainCrops || 'Rice, Tomato',
           email: user.email || '',
-          phone: user.phone || ''
+          phone: user.phone || '',
+          state: user.state || '',
+          district: user.district || ''
         }
       }));
+      if (user.state && user.district) {
+        setLocation({ city: user.district, state: user.state });
+      }
     }
   }, []);
 
@@ -83,10 +85,11 @@ const Settings = () => {
         email: settings.profile.email,
         phone: settings.profile.phone,
         farmSize: settings.profile.farmSize,
-        mainCrops: settings.profile.mainCrops
+        mainCrops: settings.profile.mainCrops,
+        state: settings.profile.state,
+        district: settings.profile.district
       };
       
-      // Update in users array
       const users = JSON.parse(localStorage.getItem('agritech_users') || '[]');
       const userIndex = users.findIndex((u: any) => u.id === currentUser.id);
       if (userIndex !== -1) {
@@ -94,9 +97,9 @@ const Settings = () => {
         localStorage.setItem('agritech_users', JSON.stringify(users));
       }
       
-      // Update current user
       localStorage.setItem('agritech_current_user', JSON.stringify(updatedUser));
       setCurrentUser(updatedUser);
+      setLocation({ city: updatedUser.district, state: updatedUser.state });
     }
     toast.success('Settings saved successfully!');
   };
@@ -224,7 +227,7 @@ const Settings = () => {
                         }))}
                       />
                     </div>
-                    <div className="space-y-2 md:col-span-2">
+                    <div className="space-y-2">
                       <Label htmlFor="mainCrops">{translateSync('Main Crops')}</Label>
                       <Textarea
                         id="mainCrops"
@@ -234,6 +237,28 @@ const Settings = () => {
                           profile: { ...prev.profile, mainCrops: e.target.value }
                         }))}
                         placeholder={translateSync("e.g., Rice, Wheat, Cotton")}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="state">{translateSync('State')}</Label>
+                      <Input
+                        id="state"
+                        value={settings.profile.state}
+                        onChange={(e) => setSettings(prev => ({
+                          ...prev,
+                          profile: { ...prev.profile, state: e.target.value }
+                        }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="district">{translateSync('District')}</Label>
+                      <Input
+                        id="district"
+                        value={settings.profile.district}
+                        onChange={(e) => setSettings(prev => ({
+                          ...prev,
+                          profile: { ...prev.profile, district: e.target.value }
+                        }))}
                       />
                     </div>
                   </div>
@@ -448,36 +473,27 @@ const Settings = () => {
                       </p>
                     </div>
                     <Switch
-                      checked={settings.location.autoDetect}
-                      onCheckedChange={(checked) => setSettings(prev => ({
-                        ...prev,
-                        location: { ...prev.location, autoDetect: checked }
-                      }))}
+                      checked={settings.autoDetectLocation}
+                      onCheckedChange={(checked) => setSettings(prev => ({ ...prev, autoDetectLocation: checked }))}
                     />
                   </div>
                   
-                  {!settings.location.autoDetect && (
+                  {!settings.autoDetectLocation && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="city">{translateSync('City')}</Label>
                         <Input
                           id="city"
-                          value={settings.location.city}
-                          onChange={(e) => setSettings(prev => ({
-                            ...prev,
-                            location: { ...prev.location, city: e.target.value }
-                          }))}
+                          value={location.city}
+                          onChange={(e) => setLocation({ ...location, city: e.target.value })}
                         />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="state">{translateSync('State')}</Label>
                         <Input
                           id="state"
-                          value={settings.location.state}
-                          onChange={(e) => setSettings(prev => ({
-                            ...prev,
-                            location: { ...prev.location, state: e.target.value }
-                          }))}
+                          value={location.state}
+                          onChange={(e) => setLocation({ ...location, state: e.target.value })}
                         />
                       </div>
                     </div>

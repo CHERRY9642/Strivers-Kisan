@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Layout } from '@/components/Layout';
 import { useLanguage, languages } from '@/contexts/LanguageContext';
-import { User, Mail, Phone, Globe, Package, LogOut, Edit, Save } from 'lucide-react';
+import { User, Mail, Phone, Globe, Package, LogOut, Edit, Save, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const profileSchema = z.object({
@@ -20,6 +20,8 @@ const profileSchema = z.object({
   email: z.string().email('Invalid email address'),
   phone: z.string().min(10, 'Phone number must be at least 10 digits'),
   language: z.string().min(1, 'Please select a language'),
+  state: z.string().min(2, 'State must be at least 2 characters'),
+  district: z.string().min(2, 'District must be at least 2 characters'),
 });
 
 type ProfileForm = z.infer<typeof profileSchema>;
@@ -44,6 +46,8 @@ const Profile = () => {
       email: '',
       phone: '',
       language: 'en',
+      state: '',
+      district: '',
     },
   });
 
@@ -60,6 +64,8 @@ const Profile = () => {
       email: user.email,
       phone: user.phone,
       language: user.language,
+      state: user.state,
+      district: user.district,
     });
   }, [navigate, form]);
 
@@ -258,6 +264,40 @@ const Profile = () => {
                                 ))}
                               </SelectContent>
                             </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="state"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{translateSync("State")}</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                disabled={!isEditing}
+                                className="h-12"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="district"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{translateSync("District")}</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                disabled={!isEditing}
+                                className="h-12"
+                              />
+                            </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}

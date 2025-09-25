@@ -1,0 +1,197 @@
+🌾 Project Kisan – Smart Crop Disease Detection System
+Hackathon: HCL GUVI - SVCET Hackathon 2025
+
+Theme: Agriculture, FoodTech & Rural Development
+Team Name: THE STRIVERS
+Team Members:
+
+N. Bhanupakash
+
+I. Charan Kumar
+
+📌 Problem Statement
+
+Farmers face huge losses due to delayed detection of crop diseases, lack of localized solutions, poor connectivity, and limited access to expert support.
+The project addresses these issues by building an AI-based Smart Crop Disease Detection and Integrated Management System.
+
+💡 Solution Overview
+
+An AI-powered Digital Farming Assistant that integrates:
+
+IoT Sensors → Real-time soil, environment, and plant health data.
+
+AI/ML Models → Image-based disease detection, yield prediction, and risk alerts.
+
+Cloud & Agentic AI → Scalable, multilingual, voice-assisted farmer support.
+
+Market & Weather APIs → Real-time price updates and weather-based alerts.
+
+🏗️ System Architecture
+1. IoT Sensor Network Layer
+
+Sensors monitor soil moisture, NPK, pH, EC, CO₂, temperature, humidity, plant health (via camera).
+
+Detects stress before visible symptoms.
+
+Data flows from field → IoT gateway (Raspberry Pi/ESP8266) → cloud → mobile app.
+
+2. Data & Integration Layer
+
+Firebase Realtime Database – sync & notifications.
+
+SQLite – offline local storage.
+
+External APIs:
+
+OpenWeatherMap → weather risk alerts.
+
+Agmarknet → market price updates.
+
+Integrated sources: dealer databases, govt. schemes, crop calendars.
+
+3. Intelligence Layer
+
+On-device AI (PyTorch Mobile) for disease detection.
+
+Cloud fallback (Vision APIs) for higher accuracy.
+
+Decision Engine integrates: photo diagnosis, sensor data, weather forecasts.
+
+Outputs: severity-based treatment plans & preventive recommendations.
+
+4. User & Community Support Layer
+
+Mobile App (Flutter/React Native) → multilingual + voice assistance.
+
+Farmers upload photos, receive instant remedies, and alerts.
+
+Community Forum → farmers share experiences.
+
+Expert Support → agronomists validate low-confidence cases.
+
+Continuous learning → AI retrains with farmer feedback & IoT data.
+
+🛠️ Technologies Used
+
+IoT & Hardware
+
+Sensors: DHT11, FC-28, NPK, pH, EC, CO₂, Camera Module
+
+IoT Gateway: Raspberry Pi, ESP8266
+
+Protocols: MQTT, HTTP
+
+AI/ML Development
+
+Models: MobileNetV2 (disease detection), Random Forest (yield prediction), Gemini Multimodal (image + text + voice)
+
+Frameworks: TensorFlow, PyTorch, Scikit-learn, OpenCV
+
+Web & Mobile App
+
+Frontend: React.js (Web), React Native (Mobile)
+
+Backend: Node.js, Express.js, Flask, Firebase Functions
+
+Visualization: Chart.js, D3.js
+
+Cloud & Databases
+
+Firebase Firestore & Realtime DB
+
+Google Cloud (Vertex AI, Firebase Hosting), AWS
+
+Docker & Kubernetes for deployment
+
+Languages
+
+Python, JavaScript
+
+🚀 Product Status
+
+✅ 90% build completed
+
+🔄 Real-time testing & validation in progress
+
+📱 Prototype: Project Kisan – Digital Farming Assistant
+
+🌟 Innovation & Uniqueness
+
+Hybrid AI → on-device + cloud fallback ensures fast, reliable detection.
+
+IoT-Integrated Diagnostics → combines sensor + image data.
+
+Offline-First Design → works in poor connectivity with local storage.
+
+Localized Remedies Engine → provides organic, chemical, and low-cost local treatments.
+
+Weather-Linked Forecasting → predicts disease risks before outbreaks.
+
+Farmer-Centric → multilingual, voice guidance, and simple UI.
+
+✅ Feasibility & Viability
+
+Technical: Prototyped (90% complete) with scalable cloud + IoT integration.
+
+Economic: Uses low-cost sensors & open-source frameworks.
+
+Operational: Farmers get recommendations via multilingual dashboards, SMS & voice.
+
+Challenges & Solutions:
+
+Sensor calibration → validation algorithms.
+
+Poor connectivity → offline-first + SMS alerts.
+
+Adoption barriers → farmer workshops in local languages.
+
+Scalability → modular APIs + cloud auto-scaling.
+
+🌍 Impact & Benefits
+
+Impact on Farmers
+
+Real-time monitoring & AI insights.
+
+Reduces water, fertilizer & pesticide wastage.
+
+Boosts yield & profitability.
+
+Supports sustainable farming practices.
+
+Social Benefits
+
+Promotes eco-friendly farming.
+
+Reduces crop failure risks.
+
+Inclusive support for farmers with limited literacy.
+
+Economic Benefits
+
+Cuts input costs via optimized irrigation/fertilization.
+
+Provides real-time price forecasts.
+
+Generates rural employment through agri-initiatives.
+
+📚 References
+
+CropIn
+ – AI farming decision support
+
+Plantix
+ – Mobile disease detection app
+
+Kisan Suvidha
+ – Govt. app for farmers
+
+AgNext
+ – Quality & precision farming
+
+eNAM
+ – Unified agri-market
+
+Research: IEEE Xplore – Smart Farming
+, Analytics Vidhya
+, Nevon Projects
