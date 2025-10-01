@@ -1,14 +1,9 @@
 # Strivers- Project Kisan
+LIVE website :https://project-kisan-466504.web.app/
 
 ## Project Overview
 
 **Strivers– Smart Crop Disease Detection System** is a comprehensive web application designed to empower farmers with modern technology and information. This platform aims to provide a suite of tools and resources to assist farmers in various aspects of their agricultural activities, from crop management and disease detection to market insights and government scheme access. The application integrates AI capabilities, real-time data, and a user-friendly interface to enhance productivity and decision-making for the rural agricultural community.
-
-### Hackathon Details
-*   **Hackathon:** HCL GUVI - SVCET Hackathon 2025
-*   **Theme:** Agriculture, FoodTech & Rural Development
-*   **Team Name:** STRIVERS DUO
-*   **Team Members:** N. Bhanupakash, I. Charan Kumar
 
 ### Problem Statement
 
